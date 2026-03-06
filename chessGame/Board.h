@@ -1,0 +1,24 @@
+#pragma once
+// 棋盘表示
+#include <optional>
+#include "Piece.h"
+#include "Move.h"
+#include <string>
+
+class Board {
+public:
+    std::optional <Piece> cells[8][8]; //optional可以表示棋格为空
+
+    Board();
+
+    // 检查坐标是否在棋盘内
+    static bool isInsideBoard(int row, int col) {
+        return row >= 0 && row < 8 && col >= 0 && col < 8;
+    }
+
+    void init();
+    void applyMove(const Move& move);
+    void print() const;
+    std::string toString() const;
+    std::string toFEN(Color turn, int halfmove, int fullmove) const;
+};

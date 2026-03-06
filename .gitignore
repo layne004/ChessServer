@@ -1,0 +1,82 @@
+## 忽略 Visual Studio 生成的用户文件和临时文件
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+*.dtbcache.v2
+*.vspscc
+*.vssscc
+*.vspf
+
+## 忽略编译输出目录
+bin/
+obj/
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+ARM/
+ARM64/
+[Dd]ebug */   # 匹配 Debug 后面带空格和字符的目录（如 Debug x64）
+[Rr]elease */  # 类似
+
+## 忽略 VS 2015+ 的 .vs 目录（存储工作区配置）
+.vs/
+
+## 忽略 C++ 浏览数据库/智能感知文件
+*.sdf
+*.opensdf
+*.opendb
+*.vcxproj.*.user
+*.db
+*.ipch
+*.VC.db
+*.VC.VC.opendb
+
+## 忽略 NuGet 包目录
+packages/
+
+## 忽略发布输出目录
+[Pp]ublish/
+
+## 忽略日志文件和数据库文件
+*.log
+*.tmp
+*.temp
+*.sqlite
+*.dbmdl
+
+## 忽略工具生成的备份文件
+*_i.c
+*_p.c
+*.ilk
+*.meta
+*.obj
+*.pch
+*.pdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*.log
+*.tlog
+*.vspscc
+*.vsp
+*.vspx
+*.pidb
+*.userprefs
+
+## 忽略 Visual Studio 缓存文件
+*.cache
+*.ilk
+*.obj
+*.pdb
+
+## 如果项目不使用 NuGet，可以取消下一行的注释来忽略 packages 目录
+# packages/
