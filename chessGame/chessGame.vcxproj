@@ -148,19 +148,21 @@
     <ClCompile Include="GameRoom.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MoveValidator.cpp" />
-    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="NetworkPlayer.cpp" />
     <ClCompile Include="RoomManager.cpp" />
     <ClCompile Include="Rules.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="Session.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AIPlayer.h" />
     <ClInclude Include="Board.h" />
     <ClInclude Include="CheckEvaluator.h" />
     <ClInclude Include="GameRoom.h" />
     <ClInclude Include="Message.h" />
     <ClInclude Include="Move.h" />
     <ClInclude Include="MoveValidator.h" />
+    <ClInclude Include="NetworkPlayer.h" />
     <ClInclude Include="Piece.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="RoomManager.h" />

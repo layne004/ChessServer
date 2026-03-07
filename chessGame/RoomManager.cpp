@@ -1,6 +1,7 @@
 #include "RoomManager.h"
 #include "Session.h"
 #include "GameRoom.h"
+#include "NetworkPlayer.h"
 
 RoomManager::RoomManager(boost::asio::io_context& io)
 	:io_(io)
@@ -66,7 +67,13 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session)
 		session->setRoom(room);
 		opponent->setRoom(room);
 
-		room->start(opponent, session);
+		auto white = std::make_shared<NetworkPlayer>(opponent, Color::White);
+		auto black = std::make_shared<NetworkPlayer>(session, Color::Black);
+
+		opponent->setPlayer(white);
+		session->setPlayer(black);
+
+		room->start(white, black);
 	}
 }
 

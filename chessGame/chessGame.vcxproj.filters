@@ -50,7 +50,7 @@
     <ClCompile Include="RoomManager.cpp">
       <Filter>game</Filter>
     </ClCompile>
-    <ClCompile Include="Player.cpp">
+    <ClCompile Include="NetworkPlayer.cpp">
       <Filter>game</Filter>
     </ClCompile>
   </ItemGroup>
@@ -89,6 +89,12 @@
       <Filter>net</Filter>
     </ClInclude>
     <ClInclude Include="RoomManager.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="NetworkPlayer.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="AIPlayer.h">
       <Filter>game</Filter>
     </ClInclude>
   </ItemGroup>

@@ -9,6 +9,14 @@ using json = nlohmann::json;
 
 class Session;
 
+class Player;
+
+enum class GameState {
+	Waiting,
+	Playing,
+	GameOver
+};
+
 class GameRoom:public std::enable_shared_from_this<GameRoom>
 {
 public:
@@ -16,22 +24,16 @@ public:
 	~GameRoom() = default;
 
 	// 开始对战
-	void start(std::shared_ptr<Session> p1, std::shared_ptr<Session> p2);
-
-	// 玩家加入（按顺序）
-	void join(std::shared_ptr<Session> player);
+	void start(std::shared_ptr<Player> white, std::shared_ptr<Player> black);
 
 	// 玩家离开
-	void leave(const std::shared_ptr<Session>& player);
-
-	// 获取玩家颜色
-	Color getPlayerColor(const std::shared_ptr<Session>& player) const;
+	void leave(const std::shared_ptr<Session>& playerSession);
 	
 	// 处理玩家走棋
-	void handleMove(std::shared_ptr<Session> playerSession, Color player, const std::string& from, const std::string& to);
+	void handleMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to);
 
 	// 处理玩家主动认输
-	void handleResign(const std::shared_ptr<Session> player);
+	void handleResign(const std::shared_ptr<Player> player);
 
 	// 获取当前轮
 	Color currentTurn()const { return turn_; }
@@ -54,8 +56,11 @@ private:
 	Board board_;
 	Color turn_ = Color::White; //白方先行
 
-	std::weak_ptr<Session> p1_;
-	std::weak_ptr<Session> p2_;
+	std::shared_ptr<Player> white_;
+	std::shared_ptr<Player> black_;
+	std::vector<std::shared_ptr<Player>> spectators_;
+
+	GameState state_ = GameState::Waiting;
 
 	int halfmoveClock_ = 0;
 	int fullmoveNumber_ = 1;

@@ -3,6 +3,8 @@
 #include "CheckEvaluator.h"
 #include "Session.h"
 #include <iostream>
+//#include "Player.h"
+#include "NetworkPlayer.h"
 
 GameRoom::GameRoom(boost::asio::io_context& io)
 	:strand_(boost::asio::make_strand(io))
@@ -11,23 +13,23 @@ GameRoom::GameRoom(boost::asio::io_context& io)
 	board_.init();
 }
 
-void GameRoom::start(std::shared_ptr<Session> p1, std::shared_ptr<Session> p2)
+void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> black)
 {
 	auto self = shared_from_this();
 
 	boost::asio::post(strand_,
-		[this, self, p1, p2]() 
+		[this, self, white, black]() 
 		{
 
-			p1_ = p1;
-			p2_ = p2;
+			white_ = white;
+			black_ = black;
 
-			p1->sendJson({
+			white->sendJson({
 				{"type", "match_success"},
 				{"color", "white"}
 				});
 
-			p2->sendJson({
+			black->sendJson({
 				{"type", "match_success"},
 				{"color", "black"}
 				});
@@ -37,75 +39,43 @@ void GameRoom::start(std::shared_ptr<Session> p1, std::shared_ptr<Session> p2)
 	);
 }
 
-void GameRoom::join(std::shared_ptr<Session> player)
+void GameRoom::leave(const std::shared_ptr<Session>& playerSession)
 {
 	auto self = shared_from_this();
 
 	boost::asio::post(strand_,
-		[this, self, player] {
-
-			if (p1_.expired()) {
-				p1_ = player;
-			}
-			else if (p2_.expired())
-			{
-				p2_ = player;
-				broadcast("GAME START\n");
-			}
-
-		});
-
-}
-
-void GameRoom::leave(const std::shared_ptr<Session>& player)
-{
-	auto self = shared_from_this();
-
-	boost::asio::post(strand_,
-		[this, self, player] 
+		[this, self, playerSession] 
 		{
-			if (auto p1 = p1_.lock()) {
-				if (p1 == player)
+			if (white_) {
+				auto netp = std::dynamic_pointer_cast<NetworkPlayer>(white_);
+				if (netp && netp->getSession() == playerSession)
 				{
-					p1_.reset();
+					white_.reset();
 				}
 			}
 
-			if (auto p2 = p2_.lock())
-			{
-				if (p2 == player)
+			if (black_) {
+				auto netp = std::dynamic_pointer_cast<NetworkPlayer>(black_);
+				if (netp && netp->getSession() == playerSession)
 				{
-					p2_.reset();
+					black_.reset();
 				}
 			}
 		});
 
 }
 
-//tofix 非线程安全
-Color GameRoom::getPlayerColor(const std::shared_ptr<Session>& player) const
-{
-	if (auto p1 = p1_.lock()) {
-		if(p1 == player)
-			return Color::White;
-	} 
-	if (auto p2 = p2_.lock()) {
-		if (p2 == player)
-			return Color::Black;
-	}
-	throw std::runtime_error("Unknown player");
-}
-
-void GameRoom::handleMove(std::shared_ptr<Session> playerSession, Color player, const std::string& from, const std::string& to)
+void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to)
 {
 	auto self = shared_from_this();
 
 	boost::asio::post(
 		strand_,
-		[this, self, playerSession, player, from, to]()
+		[this, self, player, from, to]()
 		{
-			if (player != turn_) {
-				playerSession->sendJson({
+
+			if (player->color() != turn_) {
+				player->sendJson({
 					{"type", "error"},
 					{"message", "Not your turn"}
 				});
@@ -116,7 +86,7 @@ void GameRoom::handleMove(std::shared_ptr<Session> playerSession, Color player, 
 
 			if (!MoveValidator::isValid(board_, move, turn_))
 			{
-				playerSession->sendJson(
+				player->sendJson(
 					{
 						{"type", "error"},
 						{"message", "Invalid move"}
@@ -165,14 +135,14 @@ void GameRoom::handleMove(std::shared_ptr<Session> playerSession, Color player, 
 
 }
 
-void GameRoom::handleResign(const std::shared_ptr<Session> player)
+void GameRoom::handleResign(const std::shared_ptr<Player> player)
 {
 	auto self = shared_from_this();
 
 	boost::asio::post(strand_, 
 		[this, self, player]() 
 		{
-			Color color = getPlayerColor(player);
+			Color color = player->color();
 
 			std::string winner =
 				(color == Color::White) ? "black_win" : "white_win";
@@ -188,15 +158,12 @@ void GameRoom::handleResign(const std::shared_ptr<Session> player)
 
 bool GameRoom::isFull() const 
 { 
-	auto p1 = p1_.lock();
-	auto p2 = p2_.lock();
-
-	return p1 && p2;
+	return white_ && black_;
 }
 
 bool GameRoom::isEmpty() const
 {
-	return p1_.expired() && p2_.expired();
+	return !white_ && !black_;
 }
 
 void GameRoom::resetGame()
@@ -217,22 +184,22 @@ void GameRoom::resetGame()
 
 void GameRoom::broadcast(const std::string& msg)
 {
-	if (auto p1 = p1_.lock()) {
-		p1->send(msg);
+	if (white_) {
+		white_->send(msg);
 	}
-	if (auto p2 = p2_.lock()) {
-		p2->send(msg);
+	if (black_) {
+		black_->send(msg);
 	}
 
 }
 
 void GameRoom::broadcastJson(const json& j)
 {
-	if (auto p1 = p1_.lock()) {
-		p1->sendJson(j);
+	if (white_) {
+		white_->sendJson(j);
 	}
-	if (auto p2 = p2_.lock()) {
-		p2->sendJson(j);
+	if (black_) {
+		black_->sendJson(j);
 	}
 }
 

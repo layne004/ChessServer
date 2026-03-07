@@ -10,6 +10,8 @@ using json = nlohmann::json;
 
 class RoomManager;
 
+class Player;
+
 class Session:public std::enable_shared_from_this<Session>
 {
 public:
@@ -23,6 +25,9 @@ public:
 	std::shared_ptr<GameRoom> getRoom() const;
 	void clearRoom();
 
+	void setPlayer(std::shared_ptr<Player> p);
+	std::shared_ptr<Player> getPlayer();
+
 private:
 	void doRead();
 	void doWrite();
@@ -34,6 +39,7 @@ private:
 	boost::asio::streambuf buffer_;
 	std::deque<std::string> write_queue_;
 
+	std::shared_ptr<Player> player_;
 	std::shared_ptr<GameRoom> room_;
 	std::shared_ptr<RoomManager> room_manager_;
 	bool disconnected_ = false;

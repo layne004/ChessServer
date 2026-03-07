@@ -57,6 +57,16 @@ void Session::clearRoom()
 	room_.reset();
 }
 
+void Session::setPlayer(std::shared_ptr<Player> p)
+{
+	player_ = p;
+}
+
+std::shared_ptr<Player> Session::getPlayer()
+{
+	return player_;
+}
+
 void Session::doWrite()
 {
 	auto self = shared_from_this();
@@ -130,19 +140,20 @@ void Session::handleMessage(const std::string& msg)
 		}
 		else if (type == "move")
 		{
-			if (room_ != nullptr) {
+
+			if (room_ && player_) {
 				auto data = j["data"];
 				std::string from = data["from"];
 				std::string to = data["to"];
 
-				Color player = room_->getPlayerColor(shared_from_this());
-				room_->handleMove(shared_from_this(), player, from, to);
+				room_->handleMove(player_, from, to);
+
 			}
 		}
 		else if (type == "resign")
 		{
 			if (room_)
-				room_->handleResign(shared_from_this());
+				room_->handleResign(player_);
 		}
 	}
 	catch (std::exception& e)
