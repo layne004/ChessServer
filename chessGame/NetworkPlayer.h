@@ -17,6 +17,8 @@ public:
 
 	std::shared_ptr<Session> getSession();
 
+	void setSession(std::shared_ptr<Session> s) { session_ = s; }
+
 private:
 	std::weak_ptr<Session> session_;
 	Color color_;

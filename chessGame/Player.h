@@ -16,4 +16,10 @@ public:
 
 	virtual bool isAI() const = 0;
 
+	bool connected()const { return connected_; }
+	void setConnected(bool c) { connected_ = c; }
+
+private:
+	bool connected_ = true;
+	uint64_t roomId_;
 };

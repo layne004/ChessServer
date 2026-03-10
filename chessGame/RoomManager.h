@@ -4,8 +4,10 @@
 #include <mutex>
 #include <queue>
 #include <boost/asio.hpp>
+#include <unordered_map>
+#include "GameRoom.h"
 class Session;
-class GameRoom;
+
 
 class RoomManager
 {
@@ -17,13 +19,15 @@ public:
 
 	void cleanupRooms();
 
+	void handleReconnect(std::shared_ptr<Session> s, GameRoom::RoomID roomId);
+
 private:
 	void matchPvp(std::shared_ptr<Session> session);
 	void createPveRoom(std::shared_ptr<Session> session);
 
 private:
 	boost::asio::io_context& io_; //±£¥Ê“˝”√
-	std::vector<std::shared_ptr<GameRoom>> rooms_;
+	std::unordered_map<GameRoom::RoomID, std::shared_ptr<GameRoom>> rooms_;
 	std::atomic<int> nextRoomId_ = 1;
 	std::queue<std::shared_ptr<Session>> waitingPvp_;
 	std::mutex mutex_;

@@ -20,7 +20,8 @@ enum class GameState {
 class GameRoom:public std::enable_shared_from_this<GameRoom>
 {
 public:
-	GameRoom(boost::asio::io_context& io, int roomId);
+	using RoomID = uint64_t;
+	GameRoom(boost::asio::io_context& io, RoomID roomId);
 	~GameRoom() = default;
 
 	// 开始对战
@@ -41,6 +42,9 @@ public:
 	// 处理玩家Session断线
 	void onPlayerDisconnected(const std::shared_ptr<Session>& session);
 
+	// 断线重连
+	void reconnect(const std::shared_ptr<Session>& session);
+
 	// 已知Session找player
 	std::shared_ptr<Player> findPlayer(const std::shared_ptr<Session>& session);
 
@@ -50,6 +54,8 @@ public:
 	// 获取房间状态
 	bool isFull() const;
 	bool isEmpty() const;
+	// 获取房间号
+	RoomID id()const { return roomId_; }
 
 	// 重置游戏
 	void resetGame();
@@ -64,7 +70,7 @@ private:
 	boost::asio::strand<boost::asio::any_io_executor> strand_;
 	Board board_;
 	Color turn_ = Color::White; //白方先行
-	int roomId_;
+	RoomID roomId_;
 
 	std::shared_ptr<Player> white_;
 	std::shared_ptr<Player> black_;

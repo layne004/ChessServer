@@ -6,7 +6,7 @@
 //#include "Player.h"
 #include "NetworkPlayer.h"
 
-GameRoom::GameRoom(boost::asio::io_context& io, int roomId)
+GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId)
 	:strand_(boost::asio::make_strand(io)),roomId_(roomId)
 {
 	// ≥ı ºªØ
@@ -29,11 +29,13 @@ void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> blac
 
 			white->sendJson({
 				{"type", "match_success"},
+				{"room_id", id()},
 				{"color", "white"}
 				});
 
 			black->sendJson({
 				{"type", "match_success"},
+				{"room_id", id()},
 				{"color", "black"}
 				});
 
@@ -208,6 +210,7 @@ void GameRoom::handleResign(const std::shared_ptr<Player> player)
 void GameRoom::onPlayerDisconnected(const std::shared_ptr<Session>& session)
 {
 	auto self = shared_from_this();
+
 	boost::asio::post(strand_,
 		[this, self, session]() {
 			if (state_ == GameState::GameOver)
@@ -218,11 +221,57 @@ void GameRoom::onPlayerDisconnected(const std::shared_ptr<Session>& session)
 			if (!player)
 				return;
 
-			std::string winner = (player->color() == Color::White) ? "black_win" : "white_win";
+			player->setConnected(false);
 
-			endGame(winner, "disconnect");
+			std::cout << "Player disconnected in room " << roomId_ << std::endl;
 		}
 	);
+}
+
+void GameRoom::reconnect(const std::shared_ptr<Session>& session)
+{
+	auto self = shared_from_this();
+
+	boost::asio::post(strand_, 
+		[this, self, session]()
+		{
+			bool found = false;
+			for (auto player : { white_, black_ })
+			{
+				auto net = std::dynamic_pointer_cast<NetworkPlayer>(player);
+
+				if (!net)
+					continue;
+
+				if (!player->connected())
+				{
+					net->setSession(session);
+					player->setConnected(true);
+
+					session->setRoom(shared_from_this());
+					session->setPlayer(player);
+
+					found = true;
+					broadcastState();
+					break;
+				}
+			}
+
+			if (found) {
+				session->sendJson({
+					{"type", "reconnect_success"},
+					{"room_id", roomId_}
+				});
+			}
+			else {
+				session->sendJson({
+					{"type", "error"},
+					{"message", "reconnect failed: no disconnected player"}
+				});
+			}
+		}
+	);
+
 }
 
 std::shared_ptr<Player> GameRoom::findPlayer(const std::shared_ptr<Session>& session)

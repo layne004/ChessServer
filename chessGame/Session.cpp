@@ -155,6 +155,12 @@ void Session::handleMessage(const std::string& msg)
 			if (room_)
 				room_->handleResign(player_);
 		}
+		else if (type == "reconnect")
+		{
+			auto roomId = j["room_id"];
+
+			room_manager_->handleReconnect(shared_from_this(), roomId);
+		}
 	}
 	catch (std::exception& e)
 	{

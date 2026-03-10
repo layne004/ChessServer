@@ -1,6 +1,5 @@
 #include "RoomManager.h"
 #include "Session.h"
-#include "GameRoom.h"
 #include "NetworkPlayer.h"
 
 RoomManager::RoomManager(boost::asio::io_context& io)
@@ -12,17 +11,34 @@ void RoomManager::cleanupRooms()
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 
-	rooms_.erase(
-		std::remove_if(
-			rooms_.begin(),
-			rooms_.end(),
-			[](const std::shared_ptr<GameRoom>& room)
+	for (auto it = rooms_.begin(); it != rooms_.end();)
+	{
+		if (it->second->isEmpty())
+			it = rooms_.erase(it);
+		else
+			++it;
+	}
+}
+
+void RoomManager::handleReconnect(std::shared_ptr<Session> session, GameRoom::RoomID roomId)
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	auto it = rooms_.find(roomId);
+
+	if (it == rooms_.end())
+	{
+		session->sendJson(
 			{
-				return room->isEmpty();
+				{"type", "error"},
+				{"message", "reconnect failed: room not found"}
 			}
-		),
-		rooms_.end()
-	);
+		);
+	}
+
+	auto room = it->second;
+
+	room->reconnect(session);
 }
 
 void RoomManager::handleMatch(std::shared_ptr<Session> session, const std::string& mode)
@@ -58,9 +74,9 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session)
 		auto opponent = waitingPvp_.front();
 		waitingPvp_.pop();
 
-		int roomId = nextRoomId_++;
+		auto roomId = nextRoomId_++;
 		auto room = std::make_shared<GameRoom>(io_, roomId);
-		rooms_.push_back(room);
+		rooms_[roomId] = room;
 
 		session->setRoom(room);
 		opponent->setRoom(room);
