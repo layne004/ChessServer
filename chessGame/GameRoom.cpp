@@ -6,8 +6,8 @@
 //#include "Player.h"
 #include "NetworkPlayer.h"
 
-GameRoom::GameRoom(boost::asio::io_context& io)
-	:strand_(boost::asio::make_strand(io))
+GameRoom::GameRoom(boost::asio::io_context& io, int roomId)
+	:strand_(boost::asio::make_strand(io)),roomId_(roomId)
 {
 	// ≥ı ºªØ
 	board_.init();
@@ -15,11 +15,14 @@ GameRoom::GameRoom(boost::asio::io_context& io)
 
 void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> black)
 {
+	
 	auto self = shared_from_this();
 
 	boost::asio::post(strand_,
 		[this, self, white, black]() 
 		{
+
+			state_ = GameState::Playing;
 
 			white_ = white;
 			black_ = black;
@@ -65,8 +68,46 @@ void GameRoom::leave(const std::shared_ptr<Session>& playerSession)
 
 }
 
+void GameRoom::endGame(const std::string& result, const std::string& reason)
+{
+	state_ = GameState::GameOver;
+
+	broadcastJson({
+		{"type", "game_over"},
+		{"result", result},
+		{"reason", reason }
+	});
+
+	if (white_) {
+		if (auto netp = std::dynamic_pointer_cast<NetworkPlayer>(white_)) {
+			if (auto s = netp->getSession())
+				s->clearRoom();
+		}
+	}
+
+	if (black_) {
+		if (auto netp = std::dynamic_pointer_cast<NetworkPlayer>(black_)) {
+			if (auto s = netp->getSession())
+				s->clearRoom();
+		}
+	}
+
+	white_.reset();
+	black_.reset();
+}
+
 void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to)
 {
+	if (state_ != GameState::Playing)
+	{
+		player->sendJson(
+			{
+				{"type", "error"},
+				{"message", "Game not in playing state"}
+			}
+		);
+		return;
+	}
 	auto self = shared_from_this();
 
 	boost::asio::post(
@@ -124,8 +165,16 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 			GameResult result =
 				CheckEvaluator::evaluate(board_, turn_);
 
+			
 			if (result == GameResult::Checkmate) {
-				broadcastGameOver();
+				std::string winner = (turn_ == Color::White)
+					? "black_win"
+					: "white_win";
+				endGame(winner, "checkmate");
+				return;
+			}
+			else if (result == GameResult::Stalemate) {
+				endGame("no_winner", "stalemate");
 				return;
 			}
 
@@ -137,6 +186,7 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 
 void GameRoom::handleResign(const std::shared_ptr<Player> player)
 {
+	
 	auto self = shared_from_this();
 
 	boost::asio::post(strand_, 
@@ -147,13 +197,47 @@ void GameRoom::handleResign(const std::shared_ptr<Player> player)
 			std::string winner =
 				(color == Color::White) ? "black_win" : "white_win";
 
-			broadcastJson({
-				{"type", "game_over"},
-				{"result", winner},
-				{"reason", "resign"}
-			});
+			std::string reason = "resign";
+
+			endGame(winner, reason);
+
 		}
 	);
+}
+
+void GameRoom::onPlayerDisconnected(const std::shared_ptr<Session>& session)
+{
+	auto self = shared_from_this();
+	boost::asio::post(strand_,
+		[this, self, session]() {
+			if (state_ == GameState::GameOver)
+				return;
+
+			auto player = findPlayer(session);
+
+			if (!player)
+				return;
+
+			std::string winner = (player->color() == Color::White) ? "black_win" : "white_win";
+
+			endGame(winner, "disconnect");
+		}
+	);
+}
+
+std::shared_ptr<Player> GameRoom::findPlayer(const std::shared_ptr<Session>& session)
+{
+	if (auto net = std::dynamic_pointer_cast<NetworkPlayer>(white_)) {
+		if (net->getSession() == session)
+			return white_;
+	}
+
+	if (auto net = std::dynamic_pointer_cast<NetworkPlayer>(black_)) {
+		if (net->getSession() == session)
+			return black_;
+	}
+
+	return nullptr;
 }
 
 bool GameRoom::isFull() const 
@@ -209,16 +293,6 @@ void GameRoom::broadcastState()
 		{"type", "state_update"},
 		{"fen", board_.toFEN(turn_, halfmoveClock_, fullmoveNumber_)},
 		{"turn", turn_ == Color::White ? "white" : "black"}
-	};
-
-	broadcastJson(j);
-}
-
-void GameRoom::broadcastGameOver()
-{
-	json j = {
-		{"type", "game_over"},
-		{"result", turn_ == Color::White?"black_win":"white_win"}
 	};
 
 	broadcastJson(j);

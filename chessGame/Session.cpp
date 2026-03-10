@@ -132,7 +132,7 @@ void Session::handleMessage(const std::string& msg)
 {
 	try {
 		json j = json::parse(msg);
-		std::string type = j["type"];
+		std::string type = j.at("type");
 
 		if (type == "match") {
 			std::string mode = j.at("mode");
@@ -182,7 +182,7 @@ void Session::disconnect() {
 
 			if (room_)
 			{
-				room_manager_->leaveRoom(self);
+				room_->onPlayerDisconnected(self);
 				room_.reset();
 			}
 

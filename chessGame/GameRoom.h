@@ -20,7 +20,7 @@ enum class GameState {
 class GameRoom:public std::enable_shared_from_this<GameRoom>
 {
 public:
-	GameRoom(boost::asio::io_context& io);
+	GameRoom(boost::asio::io_context& io, int roomId);
 	~GameRoom() = default;
 
 	// 开始对战
@@ -28,12 +28,21 @@ public:
 
 	// 玩家离开
 	void leave(const std::shared_ptr<Session>& playerSession);
+
+	// 终止游戏
+	void endGame(const std::string& result, const std::string& reason);
 	
 	// 处理玩家走棋
 	void handleMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to);
 
 	// 处理玩家主动认输
 	void handleResign(const std::shared_ptr<Player> player);
+
+	// 处理玩家Session断线
+	void onPlayerDisconnected(const std::shared_ptr<Session>& session);
+
+	// 已知Session找player
+	std::shared_ptr<Player> findPlayer(const std::shared_ptr<Session>& session);
 
 	// 获取当前轮
 	Color currentTurn()const { return turn_; }
@@ -49,12 +58,13 @@ private:
 	void broadcast(const std::string& msg);
 	void broadcastJson(const json& j);
 	void broadcastState();
-	void broadcastGameOver();
+	//void broadcastGameOver(const std::string& result, const std::string& reason);
 
 private:
 	boost::asio::strand<boost::asio::any_io_executor> strand_;
 	Board board_;
 	Color turn_ = Color::White; //白方先行
+	int roomId_;
 
 	std::shared_ptr<Player> white_;
 	std::shared_ptr<Player> black_;

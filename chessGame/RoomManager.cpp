@@ -8,31 +8,27 @@ RoomManager::RoomManager(boost::asio::io_context& io)
 {
 }
 
-void RoomManager::leaveRoom(const std::shared_ptr<Session>& player)
+void RoomManager::cleanupRooms()
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 
-	auto room = player->getRoom();
-	if (!room)
-		return;
-
-	room->leave(player);
-	player->clearRoom();
-
-	// 房间一空就删除
-	// todo 房间池
-	if (room->isEmpty())
-	{
-		auto it = std::find(rooms_.begin(), rooms_.end(), room);
-		if (it != rooms_.end())
-		{
-			rooms_.erase(it);
-		}
-	}
+	rooms_.erase(
+		std::remove_if(
+			rooms_.begin(),
+			rooms_.end(),
+			[](const std::shared_ptr<GameRoom>& room)
+			{
+				return room->isEmpty();
+			}
+		),
+		rooms_.end()
+	);
 }
 
 void RoomManager::handleMatch(std::shared_ptr<Session> session, const std::string& mode)
 {
+	cleanupRooms();
+
 	if (mode == "pvp") {
 		matchPvp(session);
 	}
@@ -62,7 +58,9 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session)
 		auto opponent = waitingPvp_.front();
 		waitingPvp_.pop();
 
-		auto room = std::make_shared<GameRoom>(io_);
+		int roomId = nextRoomId_++;
+		auto room = std::make_shared<GameRoom>(io_, roomId);
+		rooms_.push_back(room);
 
 		session->setRoom(room);
 		opponent->setRoom(room);
@@ -79,4 +77,5 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session)
 
 void RoomManager::createPveRoom(std::shared_ptr<Session> session)
 {
+
 }
