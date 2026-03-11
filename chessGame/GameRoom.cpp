@@ -44,32 +44,6 @@ void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> blac
 	);
 }
 
-void GameRoom::leave(const std::shared_ptr<Session>& playerSession)
-{
-	auto self = shared_from_this();
-
-	boost::asio::post(strand_,
-		[this, self, playerSession] 
-		{
-			if (white_) {
-				auto netp = std::dynamic_pointer_cast<NetworkPlayer>(white_);
-				if (netp && netp->getSession() == playerSession)
-				{
-					white_.reset();
-				}
-			}
-
-			if (black_) {
-				auto netp = std::dynamic_pointer_cast<NetworkPlayer>(black_);
-				if (netp && netp->getSession() == playerSession)
-				{
-					black_.reset();
-				}
-			}
-		});
-
-}
-
 void GameRoom::endGame(const std::string& result, const std::string& reason)
 {
 	state_ = GameState::GameOver;
@@ -180,7 +154,8 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 				return;
 			}
 
-			broadcastState();
+			//broadcastState();
+			broadcastMove(from, to);
 		}
 	);
 
@@ -224,6 +199,19 @@ void GameRoom::onPlayerDisconnected(const std::shared_ptr<Session>& session)
 			player->setConnected(false);
 
 			std::cout << "Player disconnected in room " << roomId_ << std::endl;
+
+			player->startDisconnectTimer(strand_.get_inner_executor(), 
+				[this, self, player]()
+				{
+					if (!player->connected())
+					{
+						std::string winner =
+							(player->color() == Color::White) ? "black_win" : "white_win";
+
+						endGame(winner, "disconnect_timeout");
+					}
+				}
+			);
 		}
 	);
 }
@@ -247,6 +235,7 @@ void GameRoom::reconnect(const std::shared_ptr<Session>& session)
 				{
 					net->setSession(session);
 					player->setConnected(true);
+					player->cancelDisconnectTimer(); //取消断线计时
 
 					session->setRoom(shared_from_this());
 					session->setPlayer(player);
@@ -334,6 +323,19 @@ void GameRoom::broadcastJson(const json& j)
 	if (black_) {
 		black_->sendJson(j);
 	}
+}
+
+void GameRoom::broadcastMove(const std::string& from, const std::string& to)
+{
+	json j = {
+		{"type","move"},
+		{"from",from},
+		{"to",to},
+		{"fen", board_.toFEN(turn_, halfmoveClock_, fullmoveNumber_)},
+		{ "turn", turn_ == Color::White ? "white" : "black" }
+	};
+
+	broadcastJson(j);
 }
 
 void GameRoom::broadcastState()

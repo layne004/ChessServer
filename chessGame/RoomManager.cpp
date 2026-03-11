@@ -34,6 +34,7 @@ void RoomManager::handleReconnect(std::shared_ptr<Session> session, GameRoom::Ro
 				{"message", "reconnect failed: room not found"}
 			}
 		);
+		return;
 	}
 
 	auto room = it->second;

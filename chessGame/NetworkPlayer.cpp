@@ -28,7 +28,7 @@ bool NetworkPlayer::isAI()const
 	return false;
 }
 
-std::shared_ptr<Session> NetworkPlayer::getSession()
+std::shared_ptr<Session> NetworkPlayer::getSession() const
 {
 
 	return session_.lock();

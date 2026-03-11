@@ -149,6 +149,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MoveValidator.cpp" />
     <ClCompile Include="NetworkPlayer.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="RoomManager.cpp" />
     <ClCompile Include="Rules.cpp" />
     <ClCompile Include="Server.cpp" />

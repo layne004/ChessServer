@@ -53,6 +53,9 @@
     <ClCompile Include="NetworkPlayer.cpp">
       <Filter>game</Filter>
     </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CheckEvaluator.h">

@@ -103,6 +103,10 @@ void Session::doRead() {
 					std::istream is(&buffer_);
 					std::getline(is, msg);
 
+					// ´¦ÀíÄ©Î²\r
+					if (!msg.empty() && msg.back() == '\r')
+						msg.pop_back();
+
 					handleMessage(msg);
 					doRead();
 				}
@@ -130,8 +134,23 @@ void Session::doRead() {
 
 void Session::handleMessage(const std::string& msg)
 {
+	if (msg.empty() || msg[0] != '{')
+	{
+		auto ep = socket_.remote_endpoint();
+		std::cout << "Session: Invalid message from " << ep.address().to_string()
+			<<": " << msg << std::endl;
+		return;
+	}
+
+	json j = json::parse(msg, nullptr, false);
+
+	if (j.is_discarded())
+	{
+		std::cout << "Session: JSON parse failed: " << msg << std::endl;
+		return;
+	}
+
 	try {
-		json j = json::parse(msg);
 		std::string type = j.at("type");
 
 		if (type == "match") {
@@ -142,9 +161,8 @@ void Session::handleMessage(const std::string& msg)
 		{
 
 			if (room_ && player_) {
-				auto data = j["data"];
-				std::string from = data["from"];
-				std::string to = data["to"];
+				std::string from = j["from"];
+				std::string to = j["to"];
 
 				room_->handleMove(player_, from, to);
 
@@ -164,7 +182,7 @@ void Session::handleMessage(const std::string& msg)
 	}
 	catch (std::exception& e)
 	{
-		std::cout << "JSON parse error: " << e.what() << std::endl;
+		std::cout << "Session: JSON parse error: " << e.what() << std::endl;
 		json err = {
 			{"type", "error"},
 			{"message", e.what()}
@@ -191,6 +209,7 @@ void Session::disconnect() {
 				room_->onPlayerDisconnected(self);
 				room_.reset();
 			}
+			player_.reset();
 
 			boost::system::error_code ec;
 			socket_.shutdown(tcp::socket::shutdown_both, ec);

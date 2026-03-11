@@ -15,7 +15,7 @@ public:
 
 	bool isAI() const override;
 
-	std::shared_ptr<Session> getSession();
+	std::shared_ptr<Session> getSession() const;
 
 	void setSession(std::shared_ptr<Session> s) { session_ = s; }
 

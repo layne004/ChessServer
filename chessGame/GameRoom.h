@@ -27,9 +27,6 @@ public:
 	// 开始对战
 	void start(std::shared_ptr<Player> white, std::shared_ptr<Player> black);
 
-	// 玩家离开
-	void leave(const std::shared_ptr<Session>& playerSession);
-
 	// 终止游戏
 	void endGame(const std::string& result, const std::string& reason);
 	
@@ -63,6 +60,7 @@ public:
 private:
 	void broadcast(const std::string& msg);
 	void broadcastJson(const json& j);
+	void broadcastMove(const std::string& from, const std::string& to);
 	void broadcastState();
 	//void broadcastGameOver(const std::string& result, const std::string& reason);
 
