@@ -43,12 +43,141 @@ void Board::init() {
 	for (int i = 0; i < 8; i++) {
 		cells[6][i] = Piece{ PieceType::Pawn, Color::White };
 	}
+
+	whiteKingSideCastle = true;
+	whiteQueenSideCastle = true;
+	blackKingSideCastle = true;
+	blackQueenSideCastle = true;
+
+	enPassantRow = -1;
+	enPassantCol = -1;
 }
 
 void Board::applyMove(const Move& move)
 {
-	cells[move.toRow][move.toCol] = cells[move.fromRow][move.fromCol];
+
+	auto piece = cells[move.fromRow][move.fromCol];
+
+	if (!piece)
+		return;
+
+	// 保存旧 enPassant
+	int oldEnPassantRow = enPassantRow;
+	int oldEnPassantCol = enPassantCol;
+
+	// 清空 enPassant
+	enPassantRow = -1;
+	enPassantCol = -1;
+
+	// 处理Rook被吃
+	auto captured = cells[move.toRow][move.toCol];
+
+	if (captured && captured->type == PieceType::Rook)
+	{
+		if (move.toRow == 7 && move.toCol == 0)
+			whiteQueenSideCastle = false;
+
+		if (move.toRow == 7 && move.toCol == 7)
+			whiteKingSideCastle = false;
+
+		if (move.toRow == 0 && move.toCol == 0)
+			blackQueenSideCastle = false;
+
+		if (move.toRow == 0 && move.toCol == 7)
+			blackKingSideCastle = false;
+	}
+
+	// 处理过路兵被吃
+	if (piece->type == PieceType::Pawn)
+	{
+		if (move.toRow == oldEnPassantRow && move.toCol == oldEnPassantCol)
+		{
+			int row = (piece->color == Color::White) ? move.toRow + 1 : move.toRow - 1;
+			cells[row][move.toCol].reset();
+		}
+	}
+
+	// 王车易位
+	if (piece->type == PieceType::King)
+	{
+		int diff = move.toCol - move.fromCol;
+
+		if (abs(diff) == 2) {
+			if (diff == 2)
+			{
+				cells[move.fromRow][5] = cells[move.fromRow][7];
+				cells[move.fromRow][7].reset();
+			}
+			else if (diff == -2)
+			{
+				cells[move.fromRow][3] = cells[move.fromRow][0];
+				cells[move.fromRow][0].reset();
+			}
+		}
+		
+	}
+
+	// 王移动
+	if (piece->type == PieceType::King)
+	{
+		if (piece->color == Color::White)
+		{
+			whiteKingSideCastle = false;
+			whiteQueenSideCastle = false;
+		}
+		else
+		{
+			blackKingSideCastle = false;
+			blackQueenSideCastle = false;
+		}
+	}
+
+	// 车移动
+	if (piece->type == PieceType::Rook)
+	{
+		if (move.fromRow == 7 && move.fromCol == 0)
+			whiteQueenSideCastle = false;
+
+		if (move.fromRow == 7 && move.fromCol == 7)
+			whiteKingSideCastle = false;
+
+		if (move.fromRow == 0 && move.fromCol == 0)
+			blackQueenSideCastle = false;
+
+		if (move.fromRow == 0 && move.fromCol == 7)
+			blackKingSideCastle = false;
+	}
+
+	// 兵走两格
+	if (piece && piece->type == PieceType::Pawn)
+	{
+		int diff = move.toRow - move.fromRow;
+
+		if (abs(diff) == 2)
+		{
+			enPassantRow = (move.fromRow + move.toRow) / 2;
+			enPassantCol = move.fromCol;
+		}
+	}
+
+
+	cells[move.toRow][move.toCol] = piece;
 	cells[move.fromRow][move.fromCol].reset();
+
+	// 兵升变
+	if (piece->type == PieceType::Pawn)
+	{
+		if (piece->color == Color::White && move.toRow == 0)
+		{
+			cells[move.toRow][move.toCol] = Piece{ move.promotion, Color::White };
+		}
+
+		if (piece->color == Color::Black && move.toRow == 7)
+		{
+			cells[move.toRow][move.toCol] = Piece{ move.promotion, Color::Black };
+		}
+	}
+
 }
 
 void Board::print() const{
@@ -159,11 +288,34 @@ std::string Board::toFEN(Color turn, int halfmove, int fullmove)const
 	fen << " ";
 	fen << (turn == Color::White ? "w" : "b");
 
-	// 王车易位 (暂时不实现)
-	fen << " -";
+	// 王车易位
+	fen << " ";
 
-	// 吃过路兵 (暂时不实现)
-	fen << " -";
+	std::string castling = "";
+
+	if (whiteKingSideCastle) castling += "K";
+	if (whiteQueenSideCastle) castling += "Q";
+	if (blackKingSideCastle) castling += "k";
+	if (blackQueenSideCastle) castling += "q";
+
+	if (castling.empty())
+		castling = "-";
+
+	fen << castling;
+
+	// 吃过路兵
+	fen << " ";
+
+	if (enPassantRow == -1)
+	{
+		fen << "-";
+	}
+	else {
+		char file = 'a' + enPassantCol;
+		char rank = '8' - enPassantRow;
+
+		fen << file << rank;
+	}
 
 	// 半回合计数
 	fen << " "<<halfmove;

@@ -28,12 +28,15 @@ public:
 	void setPlayer(std::shared_ptr<Player> p);
 	std::shared_ptr<Player> getPlayer();
 
+	bool isAlive() { return alive_; }
+
 private:
 	void doRead();
 	void doWrite();
 	void handleMessage(const std::string& msg);
 	void disconnect();
 
+	std::atomic<bool> alive_{true};
 	tcp::socket socket_;
 	boost::asio::strand<boost::asio::any_io_executor> strand_;
 	boost::asio::streambuf buffer_;

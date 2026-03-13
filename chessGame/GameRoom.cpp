@@ -3,7 +3,6 @@
 #include "CheckEvaluator.h"
 #include "Session.h"
 #include <iostream>
-//#include "Player.h"
 #include "NetworkPlayer.h"
 
 GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId)
@@ -203,6 +202,9 @@ void GameRoom::onPlayerDisconnected(const std::shared_ptr<Session>& session)
 			player->startDisconnectTimer(strand_.get_inner_executor(), 
 				[this, self, player]()
 				{
+					if (state_ == GameState::GameOver)
+						return;
+
 					if (!player->connected())
 					{
 						std::string winner =
@@ -241,18 +243,16 @@ void GameRoom::reconnect(const std::shared_ptr<Session>& session)
 					session->setPlayer(player);
 
 					found = true;
+					session->sendJson({
+						{"type", "reconnect_success"},
+						{"room_id", roomId_}
+					});
 					broadcastState();
 					break;
 				}
 			}
 
-			if (found) {
-				session->sendJson({
-					{"type", "reconnect_success"},
-					{"room_id", roomId_}
-				});
-			}
-			else {
+			if(!found) {
 				session->sendJson({
 					{"type", "error"},
 					{"message", "reconnect failed: no disconnected player"}

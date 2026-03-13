@@ -9,6 +9,14 @@ class Board {
 public:
     std::optional <Piece> cells[8][8]; //optional可以表示棋格为空
 
+    bool whiteKingSideCastle = true;
+    bool whiteQueenSideCastle = true;
+    bool blackKingSideCastle = true;
+    bool blackQueenSideCastle = true;
+
+    int enPassantRow = -1;
+    int enPassantCol = -1;
+
     Board();
 
     // 检查坐标是否在棋盘内

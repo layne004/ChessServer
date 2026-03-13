@@ -14,7 +14,7 @@ Session::Session(tcp::socket socket, std::shared_ptr<RoomManager> roomManager)
 
 void Session::start() {
 	// OPTIMIZE: 客户端可选颜色
-
+	alive_ = true;
 	doRead();
 }
 
@@ -202,6 +202,7 @@ void Session::disconnect() {
 			if (disconnected_)
 				return;
 
+			alive_ = false;
 			disconnected_ = true;
 
 			if (room_)

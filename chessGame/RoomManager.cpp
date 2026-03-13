@@ -24,6 +24,17 @@ void RoomManager::handleReconnect(std::shared_ptr<Session> session, GameRoom::Ro
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 
+	if (session->getRoom())
+	{
+		session->sendJson(
+			{
+				{"type", "error"},
+				{"message", "reconnect failed: already in room"}
+			}
+		);
+		return;
+	}
+
 	auto it = rooms_.find(roomId);
 
 	if (it == rooms_.end())
@@ -62,6 +73,17 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session)
 	// 如果已经在匹配队列就拒绝
 	if (session->getRoom())
 		return;
+
+	// 清理失效session
+	while (!waitingPvp_.empty())
+	{
+		auto s = waitingPvp_.front();
+
+		if (!s || !s->isAlive())
+			waitingPvp_.pop();
+		else
+			break;
+	}
 
 	if (waitingPvp_.empty()) {
 		waitingPvp_.push(session);

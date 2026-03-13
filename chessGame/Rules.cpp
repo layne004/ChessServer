@@ -7,6 +7,38 @@ bool isValidKingMove(const Board& board, const Move& m, Color currentTurn)
 	int dr = abs(m.toRow - m.fromRow);
 	int dc = abs(m.toCol - m.fromCol);
 
+	if (dr == 0 && dc == 2)
+	{
+		if (currentTurn == Color::White)
+		{
+			if (m.toCol == 6 && board.whiteKingSideCastle)
+			{
+				if (!board.cells[7][5] && !board.cells[7][6])
+					return true;
+			}
+
+			if (m.toCol == 2 && board.whiteQueenSideCastle)
+			{
+				if (!board.cells[7][1] && !board.cells[7][2] && !board.cells[7][3])
+					return true;
+			}
+		}
+		else
+		{
+			if (m.toCol == 6 && board.blackKingSideCastle)
+			{
+				if (!board.cells[0][5] && !board.cells[0][6])
+					return true;
+			}
+
+			if (m.toCol == 2 && board.blackQueenSideCastle)
+			{
+				if (!board.cells[0][1] && !board.cells[0][2] && !board.cells[0][3])
+					return true;
+			}
+		}
+	}
+
 	if (dr > 1 || dc > 1)
 		return false;
 
@@ -103,6 +135,27 @@ bool isValidPawnMove(const Board& board, const Move& m) {
 		&& board.cells[m.toRow][m.toCol] 
 		&& board.cells[m.toRow][m.toCol]->color != pawn.color)
 		return true;
+
+	// 吃过路兵
+	if (dc == 1 && dr == dir)
+	{
+		if (m.toRow == board.enPassantRow &&
+			m.toCol == board.enPassantCol)
+			return true;
+	}
+
+	// 升变检查
+	if (pawn.color == Color::White && m.toRow == 0)
+	{
+		if (m.promotion == PieceType::King || m.promotion == PieceType::Pawn)
+			return false;
+	}
+
+	if (pawn.color == Color::Black && m.toRow == 7)
+	{
+		if (m.promotion == PieceType::King || m.promotion == PieceType::Pawn)
+			return false;
+	}
 
 	return false;
 }

@@ -11,6 +11,8 @@
 struct Move {
     int fromRow, fromCol;
     int toRow, toCol;
+
+	PieceType promotion = PieceType::Queen;
 };
 
 // 将棋步转换成坐标
