@@ -33,6 +33,9 @@ public:
 	// 处理玩家走棋
 	void handleMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to);
 
+	// 处理AI玩家走棋
+	void maybeAIMove();
+
 	// 处理玩家主动认输
 	void handleResign(const std::shared_ptr<Player> player);
 

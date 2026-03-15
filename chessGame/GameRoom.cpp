@@ -4,6 +4,7 @@
 #include "Session.h"
 #include <iostream>
 #include "NetworkPlayer.h"
+#include "AIPlayer.h"
 
 GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId)
 	:strand_(boost::asio::make_strand(io)),roomId_(roomId)
@@ -153,11 +154,28 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 				return;
 			}
 
-			//broadcastState();
 			broadcastMove(from, to);
+
+			maybeAIMove();
 		}
 	);
 
+}
+
+void GameRoom::maybeAIMove()
+{
+	std::shared_ptr<Player> current = (turn_ == Color::White) ? white_ : black_;
+
+	if (!current->isAI())
+		return;
+
+	auto ai = std::dynamic_pointer_cast<AIPlayer>(current);
+
+	std::string fen = board_.toFEN(turn_, halfmoveClock_, fullmoveNumber_);
+
+	auto [from, to] = ai->think(fen);
+
+	handleMove(current, from, to);
 }
 
 void GameRoom::handleResign(const std::shared_ptr<Player> player)

@@ -56,6 +56,12 @@
     <ClCompile Include="Player.cpp">
       <Filter>game</Filter>
     </ClCompile>
+    <ClCompile Include="StockfishEngine.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="AIPlayer.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CheckEvaluator.h">
@@ -98,6 +104,9 @@
       <Filter>game</Filter>
     </ClInclude>
     <ClInclude Include="AIPlayer.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="StockfishEngine.h">
       <Filter>game</Filter>
     </ClInclude>
   </ItemGroup>

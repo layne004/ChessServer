@@ -1,16 +1,12 @@
 #pragma once
 #include "Player.h"
-
-class Move;
-class Board;
+#include "StockfishEngine.h"
 
 class AIPlayer : public Player {
 public:
-	AIPlayer(Color c);
+	AIPlayer(Color color);
 
-	void send(const std::string& msg) override {
-
-	}
+	void send(const std::string& msg) override {}
 
 	void sendJson(const json&)override {
 		// AI 不需要发网络消息
@@ -20,7 +16,9 @@ public:
 
 	bool isAI()const override { return true; }
 
-	Move generateMove(const Board& board);
+	std::pair<std::string, std::string> think(const std::string& fen);
+
 private:
 	Color color_;
+	StockfishEngine engine_;
 };

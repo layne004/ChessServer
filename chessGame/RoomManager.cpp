@@ -1,6 +1,7 @@
 #include "RoomManager.h"
 #include "Session.h"
 #include "NetworkPlayer.h"
+#include "AIPlayer.h"
 
 RoomManager::RoomManager(boost::asio::io_context& io)
 	:io_(io)
@@ -116,5 +117,18 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session)
 
 void RoomManager::createPveRoom(std::shared_ptr<Session> session)
 {
+	std::lock_guard<std::mutex> lock(mutex_);
 
+	auto roomId = nextRoomId_++;
+
+	auto room = std::make_shared<GameRoom>(io_, roomId);
+	rooms_[roomId] = room;
+
+	auto human = std::make_shared<NetworkPlayer>(session, Color::White);
+	auto ai = std::make_shared<AIPlayer>(Color::Black);
+
+	session->setRoom(room);
+	session->setPlayer(human);
+
+	room->start(human, ai);
 }
