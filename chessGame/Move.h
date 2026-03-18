@@ -16,13 +16,22 @@ struct Move {
 };
 
 // 将棋步转换成坐标
-inline Move parseMove(const std::string& from, const std::string& to)
+inline Move parseMove(const std::string& from, const std::string& to, char promotion = 'q')
 {
 	Move m;
 	m.fromRow = '8' - from[1];
 	m.fromCol = from[0] - 'a';
+
 	m.toRow = '8' - to[1];
 	m.toCol = to[0] - 'a';
+
+	switch (promotion)
+	{
+	case 'q': m.promotion = PieceType::Queen; break;
+	case 'r': m.promotion = PieceType::Rook; break;
+	case 'b': m.promotion = PieceType::Bishop; break;
+	case 'n': m.promotion = PieceType::Knight; break;
+	}
 
 	return m;
 }

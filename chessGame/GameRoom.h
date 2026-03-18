@@ -31,7 +31,7 @@ public:
 	void endGame(const std::string& result, const std::string& reason);
 	
 	// 处理玩家走棋
-	void handleMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to);
+	void handleMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to, char promotion='q');
 
 	// 处理AI玩家走棋
 	void maybeAIMove();
@@ -63,7 +63,7 @@ public:
 private:
 	void broadcast(const std::string& msg);
 	void broadcastJson(const json& j);
-	void broadcastMove(const std::string& from, const std::string& to);
+	void broadcastMove(const std::string& from, const std::string& to, std::optional<char> promotion = std::nullopt);
 	void broadcastState();
 	//void broadcastGameOver(const std::string& result, const std::string& reason);
 

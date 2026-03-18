@@ -1,48 +1,33 @@
-﻿////本地控制台程序
+﻿//Perft测试成功
+//运行结果：（标准答案）
+//perft1: 20
+//perft2: 400
+//perft3 : 8902
+//perft4 : 197281
+//#include "Perft.h"
 //#include <iostream>
-//#include <string>
-//#include "Board.h"
-//#include "MoveValidator.h"
-//#include "CheckEvaluator.h"
-//using namespace std;
 //
-//int main() {
-//    // 创建棋盘
-//    Board b;
+//int main()
+//{
+//	Board board;
 //
-//    // 白方先行
-//    Color turn = Color::White;
+//	std::cout << "perft1: "
+//		<< Perft::run(board, Color::White, 1)
+//		<< std::endl;
 //
-//    // 交替下棋
-//    while (true) {
-//        b.print();
-//        if (turn == Color::White) {
-//            cout << "白方：";
-//        }
-//        else {
-//            cout << "黑方：";
-//        }
-//        string from, to;
-//        cin >> from >> to;
-//        Move m = parseMove(from, to);
-//        if (!MoveValidator::isValid(b, m, turn))
-//            cout << "非法棋步，请重试"<<endl;
-//        else{
-//            b.applyMove(m);
-//            turn = (turn == Color::White) ? Color::Black : Color::White;
-//        }
-//        cout << "---------------------------" << endl;
+//	std::cout << "perft2: "
+//		<< Perft::run(board, Color::White, 2)
+//		<< std::endl;
 //
-//        if (CheckEvaluator::isCheckmate(b, turn))
-//        {
-//            std::cout << "checkmate!\n";
-//            b.print();
-//            return 0;
-//        }
-// 
-//    }
+//	std::cout << "perft3: "
+//		<< Perft::run(board, Color::White, 3)
+//		<< std::endl;
 //
-//    return 0;
+//	std::cout << "perft4: "
+//		<< Perft::run(board, Color::White, 4)
+//		<< std::endl;
+//
+//	return 0;
 //}
 
 
@@ -50,6 +35,8 @@
 #include "Server.h"
 #include <vector>
 #include <thread>
+#include "Perft.h"
+#include <iostream>
 
 int main()
 {
@@ -76,4 +63,5 @@ int main()
 	{
 		t.join();
 	}
+
 }

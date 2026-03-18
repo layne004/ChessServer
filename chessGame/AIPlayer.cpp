@@ -6,12 +6,23 @@ AIPlayer::AIPlayer(Color color)
 	engine_.start("stockfish-windows-x86-64-avx2.exe");
 }
 
-std::pair<std::string, std::string> AIPlayer::think(const std::string& fen)
+AIMove AIPlayer::think(const std::string& fen)
 {
 	std::string move = engine_.getBestMove(fen);
 
-	std::string from = move.substr(0, 2);
-	std::string to   = move.substr(2, 2);
+	AIMove result;
 
-	return { from, to };
+	result.from = move.substr(0, 2);
+	result.to   = move.substr(2, 2);
+
+	if (move.size() == 5)
+	{
+		result.promotion = move[4];
+	}
+	else
+	{
+		result.promotion = 'q';
+	}
+
+	return result;
 }

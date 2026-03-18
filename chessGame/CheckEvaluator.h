@@ -16,6 +16,7 @@ public:
 	static bool isCheckmate(const Board& board, Color color);
 	static bool isStalemate(const Board& board, Color color);
 	static GameResult evaluate(const Board& board, Color color);
+	static bool isSquareAttacked(const Board& board, int row, int col, Color enemy);
 
 private:
 	static bool findKing(const Board& board, Color color, int& kingRow, int& kingCol);

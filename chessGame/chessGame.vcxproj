@@ -150,6 +150,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MoveValidator.cpp" />
     <ClCompile Include="NetworkPlayer.cpp" />
+    <ClCompile Include="Perft.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="RoomManager.cpp" />
     <ClCompile Include="Rules.cpp" />
@@ -166,6 +167,7 @@
     <ClInclude Include="Move.h" />
     <ClInclude Include="MoveValidator.h" />
     <ClInclude Include="NetworkPlayer.h" />
+    <ClInclude Include="Perft.h" />
     <ClInclude Include="Piece.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="RoomManager.h" />

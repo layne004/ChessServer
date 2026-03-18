@@ -72,7 +72,7 @@ void GameRoom::endGame(const std::string& result, const std::string& reason)
 	black_.reset();
 }
 
-void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to)
+void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to, char promotion)
 {
 	if (state_ != GameState::Playing)
 	{
@@ -88,7 +88,7 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 
 	boost::asio::post(
 		strand_,
-		[this, self, player, from, to]()
+		[this, self, player, from, to, promotion]()
 		{
 
 			if (player->color() != turn_) {
@@ -99,7 +99,7 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 				return;
 			}
 
-			Move move = parseMove(from, to);
+			Move move = parseMove(from, to, promotion);
 
 			if (!MoveValidator::isValid(board_, move, turn_))
 			{
@@ -113,8 +113,24 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 			}
 
 			//判断是否吃子或兵移动
-			bool isCapture = board_.cells[move.toRow][move.toCol].has_value();
 			auto piece = board_.cells[move.fromRow][move.fromCol];
+			bool isCapture = board_.cells[move.toRow][move.toCol].has_value()||
+				(piece && piece->type == PieceType::Pawn &&
+					move.toRow == board_.enPassantRow &&
+					move.toCol == board_.enPassantCol);
+
+			//判断是否有升变
+			bool isPromotion = false;
+
+			if (piece && piece->type == PieceType::Pawn)
+			{
+				if ((turn_ == Color::White && move.toRow == 0) ||
+					(turn_ == Color::Black && move.toRow == 7))
+				{
+					isPromotion = true;
+				}
+			}
+			
 
 			board_.applyMove(move);
 
@@ -131,6 +147,13 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 
 			if (turn_ == Color::Black)
 				fullmoveNumber_++;
+
+			// 50步判断
+			if (halfmoveClock_ >= 100)
+			{
+				endGame("stalemate", "draw_50move");
+				return;
+			}
 
 			//切换走棋方
 			turn_ =
@@ -150,11 +173,18 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 				return;
 			}
 			else if (result == GameResult::Stalemate) {
-				endGame("no_winner", "stalemate");
+				endGame("stalemate", "stalemate");
 				return;
 			}
 
-			broadcastMove(from, to);
+			if (isPromotion)
+			{
+				broadcastMove(from, to, promotion);
+			}
+			else {
+				broadcastMove(from, to);
+			}
+			
 
 			maybeAIMove();
 		}
@@ -173,9 +203,9 @@ void GameRoom::maybeAIMove()
 
 	std::string fen = board_.toFEN(turn_, halfmoveClock_, fullmoveNumber_);
 
-	auto [from, to] = ai->think(fen);
+	auto move = ai->think(fen);
 
-	handleMove(current, from, to);
+	handleMove(current, move.from, move.to, move.promotion);
 }
 
 void GameRoom::handleResign(const std::shared_ptr<Player> player)
@@ -343,7 +373,7 @@ void GameRoom::broadcastJson(const json& j)
 	}
 }
 
-void GameRoom::broadcastMove(const std::string& from, const std::string& to)
+void GameRoom::broadcastMove(const std::string& from, const std::string& to, std::optional<char> promotion)
 {
 	json j = {
 		{"type","move"},
@@ -352,6 +382,11 @@ void GameRoom::broadcastMove(const std::string& from, const std::string& to)
 		{"fen", board_.toFEN(turn_, halfmoveClock_, fullmoveNumber_)},
 		{ "turn", turn_ == Color::White ? "white" : "black" }
 	};
+
+	if (promotion.has_value())
+	{
+		j["promotion"] = std::string(1, promotion.value());
+	}
 
 	broadcastJson(j);
 }

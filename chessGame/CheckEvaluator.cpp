@@ -33,7 +33,7 @@ bool CheckEvaluator::isKingInCheck(const Board& board, Color kingColor)
 				// 因为在 isValidKingMove 中调用了本函数 isKingInCheck
 				case PieceType::King:
 					if (abs(attackMove.fromRow - attackMove.toRow) <= 1 &&
-						abs(attackMove.fromCol - attackMove.toCol <= 1))
+						abs(attackMove.fromCol - attackMove.toCol) <= 1)
 						return true;
 					break;
 
@@ -158,6 +158,69 @@ bool CheckEvaluator::canPieceEscape(const Board& board, int fr, int fc, Color co
 
 			if (!CheckEvaluator::isKingInCheck(temp, color))
 				return true; //解将
+		}
+	}
+
+	return false;
+}
+
+bool CheckEvaluator::isSquareAttacked(const Board& board, int row, int col, Color enemy)
+{
+	//遍历棋盘
+	//找到对方棋子
+	//判断它是否可以攻击目标格
+
+	for (int r = 0; r < 8; r++)
+	{
+		for (int c = 0; c < 8; c++)
+		{
+			auto p = board.cells[r][c];
+
+			if (!p || p->color != enemy)
+				continue;
+
+			Move m;
+			m.fromRow = r;
+			m.fromCol = c;
+			m.toRow = row;
+			m.toCol = col;
+
+			switch (p->type)
+			{
+			case PieceType::Pawn:
+			{
+				int dir = (enemy == Color::White) ? -1 : 1;
+
+				if (row == r + dir && abs(col - c) == 1)
+					return true;
+				break;
+			}
+
+			case PieceType::Knight:
+				if (isValidKnightMove(board, m))
+					return true;
+				break;
+
+			case PieceType::Bishop:
+				if (isValidBishopMove(board, m))
+					return true;
+				break;
+
+			case PieceType::Rook:
+				if (isValidRookMove(board, m))
+					return true;
+				break;
+
+			case PieceType::Queen:
+				if (isValidQueenMove(board, m))
+					return true;
+				break;
+
+			case PieceType::King:
+				if (abs(row - r) <= 1 && abs(col - c) <= 1)
+					return true;
+				break;
+			}
 		}
 	}
 

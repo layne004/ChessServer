@@ -7,36 +7,58 @@ bool isValidKingMove(const Board& board, const Move& m, Color currentTurn)
 	int dr = abs(m.toRow - m.fromRow);
 	int dc = abs(m.toCol - m.fromCol);
 
+	// 王车易位
 	if (dr == 0 && dc == 2)
 	{
-		if (currentTurn == Color::White)
-		{
-			if (m.toCol == 6 && board.whiteKingSideCastle)
-			{
-				if (!board.cells[7][5] && !board.cells[7][6])
-					return true;
-			}
+		Color enemy = (currentTurn == Color::White) ? Color::Black : Color::White;
 
-			if (m.toCol == 2 && board.whiteQueenSideCastle)
-			{
-				if (!board.cells[7][1] && !board.cells[7][2] && !board.cells[7][3])
-					return true;
-			}
-		}
-		else
-		{
-			if (m.toCol == 6 && board.blackKingSideCastle)
-			{
-				if (!board.cells[0][5] && !board.cells[0][6])
-					return true;
-			}
+		int row = (currentTurn == Color::White) ? 7 : 0;
 
-			if (m.toCol == 2 && board.blackQueenSideCastle)
-			{
-				if (!board.cells[0][1] && !board.cells[0][2] && !board.cells[0][3])
-					return true;
-			}
+		// 王不能在将军
+		if (CheckEvaluator::isSquareAttacked(board, row, 4, enemy))
+			return false;
+
+		// king side
+		if (m.toCol == 6) {
+			if (currentTurn == Color::White && !board.whiteKingSideCastle)
+				return false;
+
+			if (currentTurn == Color::Black && !board.blackKingSideCastle)
+				return false;
+
+			if (board.cells[row][5] || board.cells[row][6])
+				return false;
+
+			if (CheckEvaluator::isSquareAttacked(board, row, 5, enemy))
+				return false;
+
+			if (CheckEvaluator::isSquareAttacked(board, row, 6, enemy))
+				return false;
+
+			return true;
 		}
+
+		// queen side
+		if (m.toCol == 2) {
+			if (currentTurn == Color::White && !board.whiteQueenSideCastle)
+				return false;
+
+			if (currentTurn == Color::Black && !board.blackQueenSideCastle)
+				return false;
+
+			if (board.cells[row][1] || board.cells[row][2] || board.cells[row][3])
+				return false;
+
+			if (CheckEvaluator::isSquareAttacked(board, row, 2, enemy))
+				return false;
+
+			if (CheckEvaluator::isSquareAttacked(board, row, 3, enemy))
+				return false;
+
+			return true;
+		}
+
+		return false;
 	}
 
 	if (dr > 1 || dc > 1)

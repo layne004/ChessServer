@@ -161,10 +161,14 @@ void Session::handleMessage(const std::string& msg)
 		{
 
 			if (room_ && player_) {
-				std::string from = j["from"];
-				std::string to = j["to"];
-
-				room_->handleMove(player_, from, to);
+				std::string from = j.at("from");
+				std::string to = j.at("to");
+				char promotion = 'q';
+				if (j.contains("promotion") && j["promotion"].is_string()) {
+					std::string prom = j["promotion"];
+					if (!prom.empty()) promotion = prom[0];
+				}
+				room_->handleMove(player_, from, to, promotion);
 
 			}
 		}

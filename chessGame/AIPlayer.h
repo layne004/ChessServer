@@ -2,6 +2,13 @@
 #include "Player.h"
 #include "StockfishEngine.h"
 
+struct AIMove
+{
+	std::string from;
+	std::string to;
+	char promotion = 'q';
+};
+
 class AIPlayer : public Player {
 public:
 	AIPlayer(Color color);
@@ -16,7 +23,7 @@ public:
 
 	bool isAI()const override { return true; }
 
-	std::pair<std::string, std::string> think(const std::string& fen);
+	AIMove think(const std::string& fen);
 
 private:
 	Color color_;
