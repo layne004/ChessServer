@@ -21,6 +21,9 @@
     <Filter Include="rules">
       <UniqueIdentifier>{24bd5dc9-838c-4971-8ab1-a5fc55259cda}</UniqueIdentifier>
     </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{36daa309-75e0-4d7e-8b0d-21c5fc3fbeb0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -65,6 +68,9 @@
     <ClCompile Include="Perft.cpp">
       <Filter>rules</Filter>
     </ClCompile>
+    <ClCompile Include="PlayerIdGenerator.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CheckEvaluator.h">
@@ -86,9 +92,6 @@
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="Server.h">
-      <Filter>net</Filter>
-    </ClInclude>
-    <ClInclude Include="Message.h">
       <Filter>net</Filter>
     </ClInclude>
     <ClInclude Include="GameRoom.h">
@@ -114,6 +117,9 @@
     </ClInclude>
     <ClInclude Include="Perft.h">
       <Filter>rules</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerIdGenerator.h">
+      <Filter>game</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

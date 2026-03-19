@@ -2,7 +2,7 @@
 #include "RoomManager.h"
 #include <iostream>
 #include <sstream>
-
+#include "Player.h"
 
 Session::Session(tcp::socket socket, std::shared_ptr<RoomManager> roomManager)
 	:socket_(std::move(socket)), 
@@ -179,9 +179,10 @@ void Session::handleMessage(const std::string& msg)
 		}
 		else if (type == "reconnect")
 		{
-			auto roomId = j["room_id"];
+			auto roomId = j.at("room_id").get<GameRoom::RoomID>();
+			auto playerId = j.at("player_id").get<std::string>();
 
-			room_manager_->handleReconnect(shared_from_this(), roomId);
+			room_manager_->handleReconnect(shared_from_this(), roomId, playerId);
 		}
 	}
 	catch (std::exception& e)
@@ -211,7 +212,8 @@ void Session::disconnect() {
 
 			if (room_)
 			{
-				room_->onPlayerDisconnected(self);
+				std::string playerId = player_ ? player_->id() : "";
+				room_->onPlayerDisconnected(self, playerId);
 				room_.reset();
 			}
 			player_.reset();

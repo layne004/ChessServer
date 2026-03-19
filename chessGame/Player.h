@@ -9,6 +9,7 @@ constexpr std::chrono::seconds DISCONNECT_TIMEOUT(30);
 
 class Player {
 public:
+	Player();
 	virtual ~Player() = default;
 
 	virtual void send(const std::string& msg) = 0;
@@ -26,8 +27,12 @@ public:
 
 	void cancelDisconnectTimer();
 
+	const std::string& id()const { return id_; }
+
+protected:
+	std::string id_;
+
 private:
 	bool connected_ = true;
-	uint64_t roomId_;
 	std::unique_ptr<boost::asio::steady_timer> disconnectTimer_;
 };

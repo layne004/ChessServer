@@ -19,7 +19,7 @@ public:
 
 	void cleanupRooms();
 
-	void handleReconnect(std::shared_ptr<Session> s, GameRoom::RoomID roomId);
+	void handleReconnect(std::shared_ptr<Session> s, GameRoom::RoomID roomId, const std::string& playerId);
 
 private:
 	void matchPvp(std::shared_ptr<Session> session);

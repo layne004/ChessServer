@@ -1,4 +1,9 @@
 #include "Player.h"
+#include "PlayerIdGenerator.h"
+Player::Player()
+{
+	id_ = PlayerIdGenerator::generate();
+}
 
 void Player::startDisconnectTimer(boost::asio::any_io_executor executor, std::function<void()> timeoutCallback)
 {

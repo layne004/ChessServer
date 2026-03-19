@@ -40,13 +40,13 @@ public:
 	void handleResign(const std::shared_ptr<Player> player);
 
 	// 处理玩家Session断线
-	void onPlayerDisconnected(const std::shared_ptr<Session>& session);
+	void onPlayerDisconnected(const std::shared_ptr<Session>& session, const std::string& playerId);
 
 	// 断线重连
-	void reconnect(const std::shared_ptr<Session>& session);
+	void reconnect(const std::shared_ptr<Session>& session, const std::string& playerId);
 
-	// 已知Session找player
-	std::shared_ptr<Player> findPlayer(const std::shared_ptr<Session>& session);
+	// 通过playerId来找player
+	std::shared_ptr<Player> findPlayerById(const std::string& id);
 
 	// 获取当前轮
 	Color currentTurn()const { return turn_; }

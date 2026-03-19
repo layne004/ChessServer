@@ -80,3 +80,5 @@ packages/
 
 ## 如果项目不使用 NuGet，可以取消下一行的注释来忽略 packages 目录
 # packages/
+*.exe
+

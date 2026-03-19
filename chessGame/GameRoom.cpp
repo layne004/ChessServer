@@ -29,12 +29,14 @@ void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> blac
 
 			white->sendJson({
 				{"type", "match_success"},
+				{"player_id", white->id()},
 				{"room_id", id()},
 				{"color", "white"}
 				});
 
 			black->sendJson({
 				{"type", "match_success"},
+				{"player_id", black->id()},
 				{"room_id", id()},
 				{"color", "black"}
 				});
@@ -229,24 +231,26 @@ void GameRoom::handleResign(const std::shared_ptr<Player> player)
 	);
 }
 
-void GameRoom::onPlayerDisconnected(const std::shared_ptr<Session>& session)
+void GameRoom::onPlayerDisconnected(const std::shared_ptr<Session>& session, const std::string& playerId)
 {
 	auto self = shared_from_this();
 
 	boost::asio::post(strand_,
-		[this, self, session]() {
+		[this, self, session, playerId]() {
 			if (state_ == GameState::GameOver)
 				return;
 
-			auto player = findPlayer(session);
+			auto player = findPlayerById(playerId);
 
 			if (!player)
 				return;
 
 			player->setConnected(false);
 
-			std::cout << "Player disconnected in room " << roomId_ << std::endl;
+			std::cout << "Session disconnect: Player "<<player->id()<<" disconnected in room " << roomId_ << std::endl;
 
+			// 防止出现网络抖动而启动多个Timer
+			player->cancelDisconnectTimer();
 			player->startDisconnectTimer(strand_.get_inner_executor(), 
 				[this, self, player]()
 				{
@@ -266,62 +270,76 @@ void GameRoom::onPlayerDisconnected(const std::shared_ptr<Session>& session)
 	);
 }
 
-void GameRoom::reconnect(const std::shared_ptr<Session>& session)
+void GameRoom::reconnect(const std::shared_ptr<Session>& session, const std::string& playerId)
 {
 	auto self = shared_from_this();
 
 	boost::asio::post(strand_, 
-		[this, self, session]()
+		[this, self, session, playerId]()
 		{
-			bool found = false;
-			for (auto player : { white_, black_ })
+			auto player = findPlayerById(playerId);
+
+			if (!player)
 			{
-				auto net = std::dynamic_pointer_cast<NetworkPlayer>(player);
-
-				if (!net)
-					continue;
-
-				if (!player->connected())
-				{
-					net->setSession(session);
-					player->setConnected(true);
-					player->cancelDisconnectTimer(); //取消断线计时
-
-					session->setRoom(shared_from_this());
-					session->setPlayer(player);
-
-					found = true;
-					session->sendJson({
-						{"type", "reconnect_success"},
-						{"room_id", roomId_}
-					});
-					broadcastState();
-					break;
-				}
-			}
-
-			if(!found) {
 				session->sendJson({
 					{"type", "error"},
-					{"message", "reconnect failed: no disconnected player"}
+					{"message", "reconnect failed: invalid player id"}
 				});
+				return;
 			}
+
+			if (player->connected())
+			{
+				session->sendJson(
+					{
+						{"type", "error"},
+						{"message", "reconnect failed: player already connected"}
+					}
+				);
+				return;
+			}
+
+			auto net = std::dynamic_pointer_cast<NetworkPlayer>(player);
+			if (!net)
+				return;
+
+			net->setSession(session);
+			player->setConnected(true);
+			player->cancelDisconnectTimer(); //取消断线计时
+
+			session->setRoom(shared_from_this());
+			session->setPlayer(player);
+
+			session->sendJson({
+				{"type", "reconnect_success"},
+				{"room_id", roomId_},
+				{"player_id", player->id()},
+				});
+
+			broadcastState();
+
 		}
 	);
 
 }
 
-std::shared_ptr<Player> GameRoom::findPlayer(const std::shared_ptr<Session>& session)
+std::shared_ptr<Player> GameRoom::findPlayerById(const std::string& id)
 {
-	if (auto net = std::dynamic_pointer_cast<NetworkPlayer>(white_)) {
-		if (net->getSession() == session)
-			return white_;
+	if (white_ && white_->id() == id)
+	{
+		return white_;
 	}
 
-	if (auto net = std::dynamic_pointer_cast<NetworkPlayer>(black_)) {
-		if (net->getSession() == session)
-			return black_;
+	if (black_ && black_->id() == id)
+	{
+		return black_;
 	}
+
+	for(auto&s:spectators_)
+		if (s && s->id() == id)
+		{
+			return s;
+		}
 
 	return nullptr;
 }

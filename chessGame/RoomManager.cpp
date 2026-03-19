@@ -21,7 +21,7 @@ void RoomManager::cleanupRooms()
 	}
 }
 
-void RoomManager::handleReconnect(std::shared_ptr<Session> session, GameRoom::RoomID roomId)
+void RoomManager::handleReconnect(std::shared_ptr<Session> session, GameRoom::RoomID roomId, const std::string& playerId)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 
@@ -51,7 +51,7 @@ void RoomManager::handleReconnect(std::shared_ptr<Session> session, GameRoom::Ro
 
 	auto room = it->second;
 
-	room->reconnect(session);
+	room->reconnect(session, playerId);
 }
 
 void RoomManager::handleMatch(std::shared_ptr<Session> session, const std::string& mode)

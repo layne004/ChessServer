@@ -152,6 +152,7 @@
     <ClCompile Include="NetworkPlayer.cpp" />
     <ClCompile Include="Perft.cpp" />
     <ClCompile Include="Player.cpp" />
+    <ClCompile Include="PlayerIdGenerator.cpp" />
     <ClCompile Include="RoomManager.cpp" />
     <ClCompile Include="Rules.cpp" />
     <ClCompile Include="Server.cpp" />
@@ -163,13 +164,13 @@
     <ClInclude Include="Board.h" />
     <ClInclude Include="CheckEvaluator.h" />
     <ClInclude Include="GameRoom.h" />
-    <ClInclude Include="Message.h" />
     <ClInclude Include="Move.h" />
     <ClInclude Include="MoveValidator.h" />
     <ClInclude Include="NetworkPlayer.h" />
     <ClInclude Include="Perft.h" />
     <ClInclude Include="Piece.h" />
     <ClInclude Include="Player.h" />
+    <ClInclude Include="PlayerIdGenerator.h" />
     <ClInclude Include="RoomManager.h" />
     <ClInclude Include="Rules.h" />
     <ClInclude Include="Server.h" />
