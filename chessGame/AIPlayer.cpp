@@ -3,7 +3,12 @@
 AIPlayer::AIPlayer(Color color)
 	:color_(color)
 {
+#ifdef _WIN32
 	engine_.start("./engine/stockfish-windows-x86-64-avx2.exe");
+#else
+	engine_.start("/usr/games/stockfish");
+#endif
+	
 }
 
 AIMove AIPlayer::think(const std::string& fen)

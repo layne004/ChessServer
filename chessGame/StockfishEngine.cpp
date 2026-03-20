@@ -1,6 +1,5 @@
 #include "StockfishEngine.h"
 #include <iostream>
-#include <Windows.h>
 
 StockfishEngine::StockfishEngine() {}
 
@@ -119,28 +118,31 @@ void StockfishEngine::sendCommand(const std::string& cmd)
 
 std::string StockfishEngine::readLine()
 {
-	char buffer[256];
+    static std::string cache;
+    char buf[256];
+
+    while (true)
+    {
+        auto pos = cache.find('\n');
+        if (pos != std::string::npos)
+        {
+            std::string line = cache.substr(0, pos);
+            cache.erase(0, pos + 1);
+            return line;
+        }
 
 #ifdef _WIN32
-
-    DWORD read;
-    if (!ReadFile(readPipe, buffer, sizeof(buffer) - 1, &read, NULL))
-        return "";
-
-    buffer[read] = 0;
-    return std::string(buffer);
-
+        DWORD read;
+        if (!ReadFile(readPipe, buf, sizeof(buf), &read, NULL) || read == 0)
+            return "";
 #else
-
-    int n = read(readPipe[0], buffer, sizeof(buffer) - 1);
-
-    if (n <= 0)
-        return "";
-
-    buffer[n] = 0;
-    return std::string(buffer);
-
+        int read = ::read(readPipe[0], buf, sizeof(buf));
+        if (read <= 0)
+            return "";
 #endif
+
+        cache.append(buf, read);
+    }
 }
 
 std::string StockfishEngine::getBestMove(const std::string& fen)
@@ -151,7 +153,7 @@ std::string StockfishEngine::getBestMove(const std::string& fen)
 	while (true)
 	{
 		auto line = readLine();
-
+        
 		if (line.find("bestmove") != std::string::npos)
 		{
             std::string move = line.substr(9);
