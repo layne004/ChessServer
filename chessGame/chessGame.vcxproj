@@ -93,6 +93,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>D:\Code\chess\chessGame\chessGame\rules;D:\Code\chess\chessGame\chessGame\net;D:\Code\chess\chessGame\chessGame\game;D:\Code\chess\chessGame\chessGame\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -108,6 +109,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>D:\Code\chess\chessGame\chessGame\rules;D:\Code\chess\chessGame\chessGame\net;D:\Code\chess\chessGame\chessGame\game;D:\Code\chess\chessGame\chessGame\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -121,6 +123,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>D:\Code\chess\chessGame\chessGame\rules;D:\Code\chess\chessGame\chessGame\net;D:\Code\chess\chessGame\chessGame\game;D:\Code\chess\chessGame\chessGame\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,6 +139,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>D:\Code\chess\chessGame\chessGame\rules;D:\Code\chess\chessGame\chessGame\net;D:\Code\chess\chessGame\chessGame\game;D:\Code\chess\chessGame\chessGame\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,41 +147,41 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AIPlayer.cpp" />
-    <ClCompile Include="Board.cpp" />
-    <ClCompile Include="CheckEvaluator.cpp" />
-    <ClCompile Include="GameRoom.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="MoveGenerator.cpp" />
-    <ClCompile Include="MoveValidator.cpp" />
-    <ClCompile Include="NetworkPlayer.cpp" />
-    <ClCompile Include="Perft.cpp" />
-    <ClCompile Include="Player.cpp" />
-    <ClCompile Include="PlayerIdGenerator.cpp" />
-    <ClCompile Include="RoomManager.cpp" />
-    <ClCompile Include="Rules.cpp" />
-    <ClCompile Include="Server.cpp" />
-    <ClCompile Include="Session.cpp" />
-    <ClCompile Include="StockfishEngine.cpp" />
+    <ClCompile Include="core\Board.cpp" />
+    <ClCompile Include="core\CheckEvaluator.cpp" />
+    <ClCompile Include="core\MoveGenerator.cpp" />
+    <ClCompile Include="core\MoveValidator.cpp" />
+    <ClCompile Include="game\AIPlayer.cpp" />
+    <ClCompile Include="game\GameRoom.cpp" />
+    <ClCompile Include="game\NetworkPlayer.cpp" />
+    <ClCompile Include="game\Player.cpp" />
+    <ClCompile Include="game\PlayerIdGenerator.cpp" />
+    <ClCompile Include="game\RoomManager.cpp" />
+    <ClCompile Include="game\StockfishEngine.cpp" />
+    <ClCompile Include="net\Server.cpp" />
+    <ClCompile Include="net\Session.cpp" />
+    <ClCompile Include="rules\Perft.cpp" />
+    <ClCompile Include="rules\Rules.cpp" />
+    <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AIPlayer.h" />
-    <ClInclude Include="Board.h" />
-    <ClInclude Include="CheckEvaluator.h" />
-    <ClInclude Include="GameRoom.h" />
-    <ClInclude Include="Move.h" />
-    <ClInclude Include="MoveGenerator.h" />
-    <ClInclude Include="MoveValidator.h" />
-    <ClInclude Include="NetworkPlayer.h" />
-    <ClInclude Include="Perft.h" />
-    <ClInclude Include="Piece.h" />
-    <ClInclude Include="Player.h" />
-    <ClInclude Include="PlayerIdGenerator.h" />
-    <ClInclude Include="RoomManager.h" />
-    <ClInclude Include="Rules.h" />
-    <ClInclude Include="Server.h" />
-    <ClInclude Include="Session.h" />
-    <ClInclude Include="StockfishEngine.h" />
+    <ClInclude Include="core\Board.h" />
+    <ClInclude Include="core\CheckEvaluator.h" />
+    <ClInclude Include="core\Move.h" />
+    <ClInclude Include="core\MoveGenerator.h" />
+    <ClInclude Include="core\MoveValidator.h" />
+    <ClInclude Include="core\Piece.h" />
+    <ClInclude Include="game\AIPlayer.h" />
+    <ClInclude Include="game\GameRoom.h" />
+    <ClInclude Include="game\NetworkPlayer.h" />
+    <ClInclude Include="game\Player.h" />
+    <ClInclude Include="game\PlayerIdGenerator.h" />
+    <ClInclude Include="game\RoomManager.h" />
+    <ClInclude Include="game\StockfishEngine.h" />
+    <ClInclude Include="net\Server.h" />
+    <ClInclude Include="net\Session.h" />
+    <ClInclude Include="rules\Perft.h" />
+    <ClInclude Include="rules\Rules.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,5 +1,8 @@
 #pragma once
 #include <string>
+#include <functional>
+#include <thread>
+#include <mutex>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -12,6 +15,8 @@
 class StockfishEngine
 {
 public:
+	using Callback = std::function<void(const std::string&)>;
+
 	StockfishEngine();
 	~StockfishEngine();
 
@@ -21,7 +26,14 @@ public:
 
 	std::string readLine();
 
+	// 旧同步接口
 	std::string getBestMove(const std::string& fen);
+
+	// 新异步接口
+	void asyncGetBestMove(const std::string& fen, Callback cb);
+
+private:
+	void workerLoop();
 
 private:
 	
@@ -34,6 +46,10 @@ private:
 	int readPipe[2];
 	pid_t pid = -1;
 #endif
+
+	std::thread worker_;
+	std::mutex mutex_;
+	bool running_ = false;
 
 };
 

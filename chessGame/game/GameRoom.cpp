@@ -159,7 +159,7 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 
 			//ÇÐ»»×ßÆå·½
 			turn_ =
-				(self->turn_ == Color::White)
+				(turn_ == Color::White)
 				? Color::Black
 				: Color::White;
 

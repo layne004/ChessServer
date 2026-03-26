@@ -1,5 +1,4 @@
 #include "StockfishEngine.h"
-#include <iostream>
 
 StockfishEngine::StockfishEngine() {}
 
@@ -166,4 +165,20 @@ std::string StockfishEngine::getBestMove(const std::string& fen)
             return move;
 		}
 	}
+}
+
+void StockfishEngine::asyncGetBestMove(const std::string& fen, Callback cb)
+{
+    std::thread([this, fen, cb]() {
+        std::string move;
+
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            move = getBestMove(fen);
+        }
+
+        if (cb)
+            cb(move);
+
+    }).detach();
 }
