@@ -1,6 +1,7 @@
 #include "CheckEvaluator.h"
 #include "Rules.h"
 #include "MoveValidator.h"
+#include "MoveGenerator.h"
 
 bool CheckEvaluator::isKingInCheck(const Board& board, Color kingColor)
 {
@@ -126,42 +127,7 @@ bool CheckEvaluator::isPawnAttacking(const Board& board, const Move& m, Color pa
 
 bool CheckEvaluator::hasAnyLegalEscape(const Board& board, Color color)
 {
-	for (int r = 0; r < 8; r++)
-		for (int c = 0; c < 8; c++) 
-		{
-			if (!board.cells[r][c])
-				continue;
-
-			if (board.cells[r][c]->color != color)
-				continue;
-
-			if (canPieceEscape(board, r, c, color))
-				return true;
-		}
-
-	return false;
-}
-
-bool CheckEvaluator::canPieceEscape(const Board& board, int fr, int fc, Color color)
-{
-	for (int r = 0; r < 8; r++)
-	{
-		for (int c = 0; c < 8; c++) 
-		{
-			Move m{ fr,fc,r,c };
-
-			if (!MoveValidator::isValid(board, m, color))
-				continue;
-
-			Board temp = board;
-			temp.applyMove(m);
-
-			if (!CheckEvaluator::isKingInCheck(temp, color))
-				return true; //½â½«
-		}
-	}
-
-	return false;
+	return !MoveGenerator::generateAll(board, color).empty();
 }
 
 bool CheckEvaluator::isSquareAttacked(const Board& board, int row, int col, Color enemy)

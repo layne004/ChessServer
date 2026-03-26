@@ -71,6 +71,9 @@
     <ClCompile Include="PlayerIdGenerator.cpp">
       <Filter>game</Filter>
     </ClCompile>
+    <ClCompile Include="MoveGenerator.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CheckEvaluator.h">
@@ -120,6 +123,9 @@
     </ClInclude>
     <ClInclude Include="PlayerIdGenerator.h">
       <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="MoveGenerator.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

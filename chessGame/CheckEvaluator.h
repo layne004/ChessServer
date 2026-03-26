@@ -22,7 +22,6 @@ private:
 	static bool findKing(const Board& board, Color color, int& kingRow, int& kingCol);
 	static bool isPawnAttacking(const Board& board, const Move& m, Color pawnColor);
 	static bool hasAnyLegalEscape(const Board& board, Color color);
-	static bool canPieceEscape(const Board& board, int fr, int fc, Color color);
 
 };
 
