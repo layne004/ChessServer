@@ -31,3 +31,18 @@ AIMove AIPlayer::think(const std::string& fen)
 
 	return result;
 }
+
+void AIPlayer::asyncThink(const std::string& fen, std::function<void(AIMove)> cb)
+{
+	engine_.asyncGetBestMove(fen,
+		[cb](const std::string& moveStr) {
+			AIMove result;
+
+			result.from = moveStr.substr(0, 2);
+			result.to = moveStr.substr(2, 2);
+
+			result.promotion = moveStr.size() == 5 ? moveStr[4] : 'q';
+
+			cb(result);
+	});
+}

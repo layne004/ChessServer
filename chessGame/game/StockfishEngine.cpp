@@ -4,6 +4,10 @@ StockfishEngine::StockfishEngine() {}
 
 StockfishEngine::~StockfishEngine() 
 {
+    running_ = false;
+
+    if (worker_.joinable())
+        worker_.join();
 #ifdef _WIN32
 	if (processHandle)
 		CloseHandle(processHandle);

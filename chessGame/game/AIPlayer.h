@@ -23,7 +23,10 @@ public:
 
 	bool isAI()const override { return true; }
 
+	// Õ¨≤Ω
 	AIMove think(const std::string& fen);
+	// “Ï≤Ω
+	void asyncThink(const std::string& fen, std::function<void(AIMove)> cb);
 
 private:
 	Color color_;

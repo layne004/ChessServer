@@ -188,7 +188,9 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 			}
 			
 
+			std::cout << "before AI\n";
 			maybeAIMove();
+			std::cout << "after AI\n";
 		}
 	);
 
@@ -205,9 +207,13 @@ void GameRoom::maybeAIMove()
 
 	std::string fen = board_.toFEN(turn_, halfmoveClock_, fullmoveNumber_);
 
-	auto move = ai->think(fen);
-
-	handleMove(current, move.from, move.to, move.promotion);
+	ai->asyncThink(fen, [weak = weak_from_this(), current](AIMove move)
+		{
+			if(auto self = weak.lock())
+			{
+				self->handleMove(current, move.from, move.to, move.promotion);
+			}
+		});
 }
 
 void GameRoom::handleResign(const std::shared_ptr<Player> player)

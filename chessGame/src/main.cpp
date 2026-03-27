@@ -37,6 +37,7 @@
 #include <thread>
 #include "Perft.h"
 #include <iostream>
+#include "StockfishEngine.h"
 
 int main()
 {
@@ -64,4 +65,5 @@ int main()
 		t.join();
 	}
 
+	return 0;
 }
