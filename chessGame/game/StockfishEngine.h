@@ -3,6 +3,8 @@
 #include <functional>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
+#include <queue>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -47,9 +49,16 @@ private:
 	pid_t pid = -1;
 #endif
 
+	struct Task
+	{
+		std::string fen;
+		Callback cb;
+	};
+
 	std::thread worker_;
 	std::mutex mutex_;
 	bool running_ = false;
-
+	std::condition_variable cv_;
+	std::queue<Task> tasks_;
 };
 

@@ -188,9 +188,7 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 			}
 			
 
-			std::cout << "before AI\n";
 			maybeAIMove();
-			std::cout << "after AI\n";
 		}
 	);
 

@@ -4,10 +4,16 @@ StockfishEngine::StockfishEngine() {}
 
 StockfishEngine::~StockfishEngine() 
 {
-    running_ = false;
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        running_ = false;
+    }
+
+    cv_.notify_all();
 
     if (worker_.joinable())
         worker_.join();
+    
 #ifdef _WIN32
 	if (processHandle)
 		CloseHandle(processHandle);
@@ -67,6 +73,9 @@ bool StockfishEngine::start(const std::string& path)
 
     sendCommand("uci");
 
+    running_ = true;
+    worker_ = std::thread(&StockfishEngine::workerLoop, this);
+
     return true;
 }
 
@@ -95,6 +104,9 @@ bool StockfishEngine::start(const std::string& path)
     close(readPipe[1]);
 
     sendCommand("uci");
+
+    running_ = true;
+    worker_ = std::thread(&StockfishEngine::workerLoop, this);
 
     return true;
 }
@@ -173,16 +185,34 @@ std::string StockfishEngine::getBestMove(const std::string& fen)
 
 void StockfishEngine::asyncGetBestMove(const std::string& fen, Callback cb)
 {
-    std::thread([this, fen, cb]() {
-        std::string move;
+    // 从 开线程 -> 压入队列并唤醒worker;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        tasks_.push(Task{ fen, cb });
+    }
+    cv_.notify_one();
+    
+}
 
+void StockfishEngine::workerLoop()
+{
+    while (true)
+    {
+        Task task;
         {
-            std::lock_guard<std::mutex> lock(mutex_);
-            move = getBestMove(fen);
+            std::unique_lock<std::mutex> lock(mutex_);
+
+            cv_.wait(lock, [this] {return !tasks_.empty() || !running_; });
+
+            if (tasks_.empty() && !running_)
+                return;
+
+            task = tasks_.front();
+            tasks_.pop();
         }
 
-        if (cb)
-            cb(move);
-
-    }).detach();
+        std::string move = getBestMove(task.fen);
+        if (task.cb)
+            task.cb(move);
+    }
 }
