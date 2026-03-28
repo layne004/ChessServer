@@ -54,7 +54,8 @@ void RoomManager::handleReconnect(std::shared_ptr<Session> session, GameRoom::Ro
 	room->reconnect(session, playerId);
 }
 
-void RoomManager::handleMatch(std::shared_ptr<Session> session, const std::string& mode)
+void RoomManager::handleMatch(std::shared_ptr<Session> session, const std::string& mode
+	, const std::string& level, const std::string& color)
 {
 	cleanupRooms();
 
@@ -63,7 +64,7 @@ void RoomManager::handleMatch(std::shared_ptr<Session> session, const std::strin
 	}
 	else if (mode == "pve")
 	{
-		createPveRoom(session);
+		createPveRoom(session, level, color);
 	}
 }
 
@@ -115,20 +116,31 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session)
 	}
 }
 
-void RoomManager::createPveRoom(std::shared_ptr<Session> session)
+void RoomManager::createPveRoom(std::shared_ptr<Session> session, const std::string& level, const std::string& color)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
+
+	Color humanColor = Color::White;
+	if (color == "black")
+		humanColor = Color::Black;
+	else if (color == "random")
+		humanColor = (rand() % 2) ? Color::White : Color::Black;
+
+	Color aiColor = (humanColor == Color::White) ? Color::Black : Color::White;
 
 	auto roomId = nextRoomId_++;
 
 	auto room = std::make_shared<GameRoom>(io_, roomId);
 	rooms_[roomId] = room;
 
-	auto human = std::make_shared<NetworkPlayer>(session, Color::White);
-	auto ai = std::make_shared<AIPlayer>(Color::Black);
+	auto human = std::make_shared<NetworkPlayer>(session, humanColor);
+	auto ai = std::make_shared<AIPlayer>(aiColor, level);
 
 	session->setRoom(room);
 	session->setPlayer(human);
 
-	room->start(human, ai);
+	if (humanColor == Color::White)
+		room->start(human, ai);
+	else
+		room->start(ai, human);
 }

@@ -29,10 +29,10 @@ public:
 	std::string readLine();
 
 	// 旧同步接口
-	std::string getBestMove(const std::string& fen);
+	std::string getBestMove(const std::string& fen, int depth);
 
 	// 新异步接口
-	void asyncGetBestMove(const std::string& fen, Callback cb);
+	void asyncGetBestMove(const std::string& fen, int depth, Callback cb);
 
 private:
 	void workerLoop();
@@ -52,6 +52,7 @@ private:
 	struct Task
 	{
 		std::string fen;
+		int depth;
 		Callback cb;
 	};
 

@@ -1,7 +1,14 @@
 #include "AIPlayer.h"
 
-AIPlayer::AIPlayer(Color color)
-	:color_(color)
+static int levelToDepth(const std::string& level)
+{
+	if (level == "easy") return 4;
+	if (level == "hard") return 12;
+	return 8;
+}
+
+AIPlayer::AIPlayer(Color color, const std::string& level)
+	:color_(color), depth_(levelToDepth(level))
 {
 #ifdef _WIN32
 	engine_.start("./engine/stockfish-windows-x86-64-avx2.exe");
@@ -13,7 +20,7 @@ AIPlayer::AIPlayer(Color color)
 
 AIMove AIPlayer::think(const std::string& fen)
 {
-	std::string move = engine_.getBestMove(fen);
+	std::string move = engine_.getBestMove(fen, depth_);
 
 	AIMove result;
 
@@ -34,7 +41,7 @@ AIMove AIPlayer::think(const std::string& fen)
 
 void AIPlayer::asyncThink(const std::string& fen, std::function<void(AIMove)> cb)
 {
-	engine_.asyncGetBestMove(fen,
+	engine_.asyncGetBestMove(fen, depth_, 
 		[cb](const std::string& moveStr) {
 			AIMove result;
 

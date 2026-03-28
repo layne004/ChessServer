@@ -118,20 +118,6 @@ void Session::doRead() {
 	);
 }
 
-//void Session::handleMessage(const std::string& msg)
-//{
-//	// Àý£ºMOVE e2 e4
-//	std::istringstream iss(msg);
-//	std::string cmd, from, to;
-//	iss >> cmd >> from >> to;
-//
-//	if (cmd == "MOVE") {
-//		Color color = room_->getPlayerColor(shared_from_this());
-//		room_->handleMove(shared_from_this(), color, from, to);
-//		
-//	}
-//}
-
 void Session::handleMessage(const std::string& msg)
 {
 	if (msg.empty() || msg[0] != '{')
@@ -155,7 +141,17 @@ void Session::handleMessage(const std::string& msg)
 
 		if (type == "match") {
 			std::string mode = j.at("mode");
-			room_manager_->handleMatch(shared_from_this(), mode);
+
+			std::string level = "easy";
+			std::string color = "random";
+
+			if (j.contains("level"))
+				level = j["level"].get<std::string>();
+
+			if (j.contains("color"))
+				color = j["color"].get<std::string>();
+
+			room_manager_->handleMatch(shared_from_this(), mode, level, color);
 		}
 		else if (type == "move")
 		{

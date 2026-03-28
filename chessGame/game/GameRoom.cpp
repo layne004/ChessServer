@@ -42,6 +42,8 @@ void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> blac
 				});
 
 			broadcastState();
+
+			maybeAIMove();
 		}
 	);
 }

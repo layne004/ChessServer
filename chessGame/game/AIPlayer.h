@@ -9,9 +9,16 @@ struct AIMove
 	char promotion = 'q';
 };
 
+enum class AIDifficulty
+{
+	Easy,
+	Medium,
+	Hard
+};
+
 class AIPlayer : public Player {
 public:
-	AIPlayer(Color color);
+	AIPlayer(Color color, const std::string& level);
 
 	void send(const std::string& msg) override {}
 
@@ -30,5 +37,6 @@ public:
 
 private:
 	Color color_;
+	int depth_;
 	StockfishEngine engine_;
 };

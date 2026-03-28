@@ -160,10 +160,10 @@ std::string StockfishEngine::readLine()
     }
 }
 
-std::string StockfishEngine::getBestMove(const std::string& fen)
+std::string StockfishEngine::getBestMove(const std::string& fen, int depth)
 {
 	sendCommand("position fen " + fen);
-	sendCommand("go movetime 500");
+    sendCommand("go depth " + std::to_string(depth));
 
 	while (true)
 	{
@@ -183,12 +183,12 @@ std::string StockfishEngine::getBestMove(const std::string& fen)
 	}
 }
 
-void StockfishEngine::asyncGetBestMove(const std::string& fen, Callback cb)
+void StockfishEngine::asyncGetBestMove(const std::string& fen, int depth, Callback cb)
 {
     // 从 开线程 -> 压入队列并唤醒worker;
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        tasks_.push(Task{ fen, cb });
+        tasks_.push(Task{ fen, depth, cb });
     }
     cv_.notify_one();
     
@@ -211,7 +211,7 @@ void StockfishEngine::workerLoop()
             tasks_.pop();
         }
 
-        std::string move = getBestMove(task.fen);
+        std::string move = getBestMove(task.fen, task.depth);
         if (task.cb)
             task.cb(move);
     }

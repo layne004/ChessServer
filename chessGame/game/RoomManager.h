@@ -15,7 +15,7 @@ public:
 	RoomManager(boost::asio::io_context& io);
 
 	// 处理匹配
-	void handleMatch(std::shared_ptr<Session> session, const std::string& mode);
+	void handleMatch(std::shared_ptr<Session> session, const std::string& mode, const std::string& level, const std::string& color);
 
 	void cleanupRooms();
 
@@ -23,7 +23,7 @@ public:
 
 private:
 	void matchPvp(std::shared_ptr<Session> session);
-	void createPveRoom(std::shared_ptr<Session> session);
+	void createPveRoom(std::shared_ptr<Session> session, const std::string& level, const std::string& color);
 
 private:
 	boost::asio::io_context& io_; //保存引用
