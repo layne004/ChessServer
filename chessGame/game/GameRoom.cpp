@@ -10,7 +10,8 @@ using namespace std::chrono;
 GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId,
 	int initialTimeMs,
 	int incrementMs)
-	:strand_(boost::asio::make_strand(io)),roomId_(roomId),initialTimeMs_(initialTimeMs), incrementMs_(incrementMs)
+	:strand_(boost::asio::make_strand(io)), clockTimer_(io), roomId_(roomId),
+	initialTimeMs_(initialTimeMs), incrementMs_(incrementMs)
 {
 	// 初始化
 	board_.init();
@@ -38,6 +39,46 @@ void GameRoom::updateClockBeforeMove()
 	current.remaining_ms += incrementMs_;
 }
 
+void GameRoom::startClockTimer()
+{
+	auto self = shared_from_this();
+
+	clockTimer_.expires_after(std::chrono::milliseconds(200));
+
+	clockTimer_.async_wait(
+		boost::asio::bind_executor(
+			strand_,
+			[this, self](const boost::system::error_code& ec)
+			{
+				checkTimeout(ec);
+			}
+		)
+	);
+}
+
+void GameRoom::checkTimeout(const boost::system::error_code& ec)
+{
+	if (ec || state_ != GameState::Playing)
+		return;
+
+	auto now = steady_clock::now();
+
+	ClockState& current = (turn_ == Color::White) ? whiteClock_ : blackClock_;
+
+	int elapsed = duration_cast<milliseconds>(now - current.lastStart).count();
+
+	if (elapsed >= current.remaining_ms)
+	{
+		std::string winner =
+			(turn_ == Color::White) ? "black_win" : "white_win";
+
+		endGame(winner, "timeout");
+		return;
+	}
+
+	startClockTimer();
+}
+
 void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> black)
 {
 	
@@ -48,6 +89,7 @@ void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> blac
 		{
 
 			state_ = GameState::Playing;
+			startClockTimer();
 
 			//初始化棋钟
 			auto now = std::chrono::steady_clock::now();
@@ -84,6 +126,7 @@ void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> blac
 void GameRoom::endGame(const std::string& result, const std::string& reason)
 {
 	state_ = GameState::GameOver;
+	clockTimer_.cancel();
 
 	broadcastJson({
 		{"type", "game_over"},

@@ -7,6 +7,7 @@
 #include <json.hpp>
 using json = nlohmann::json;
 #include <chrono>
+#include <boost/asio/steady_timer.hpp>
 
 class Session;
 
@@ -32,9 +33,6 @@ public:
 		int initialTimeMs = 300000,
 		int incrementMs = 3000);
 	~GameRoom() = default;
-
-	// 在走棋后更新时钟
-	void updateClockBeforeMove();
 
 	// 开始对战
 	void start(std::shared_ptr<Player> white, std::shared_ptr<Player> black);
@@ -78,9 +76,16 @@ private:
 	void broadcastMove(const std::string& from, const std::string& to, std::optional<char> promotion = std::nullopt);
 	void broadcastState();
 	//void broadcastGameOver(const std::string& result, const std::string& reason);
+	
+	// 在走棋后更新时钟
+	void updateClockBeforeMove();
+
+	void startClockTimer();
+	void checkTimeout(const boost::system::error_code& ec);
 
 private:
 	boost::asio::strand<boost::asio::any_io_executor> strand_;
+	boost::asio::steady_timer clockTimer_;
 	Board board_;
 	Color turn_ = Color::White; //白方先行
 	RoomID roomId_;
