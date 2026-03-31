@@ -178,6 +178,7 @@
     <ClInclude Include="game\PlayerIdGenerator.h" />
     <ClInclude Include="game\RoomManager.h" />
     <ClInclude Include="game\StockfishEngine.h" />
+    <ClInclude Include="game\TimeControl.h" />
     <ClInclude Include="net\Server.h" />
     <ClInclude Include="net\Session.h" />
     <ClInclude Include="rules\Perft.h" />

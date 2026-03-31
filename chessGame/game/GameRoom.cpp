@@ -5,12 +5,37 @@
 #include <iostream>
 #include "NetworkPlayer.h"
 #include "AIPlayer.h"
+using namespace std::chrono;
 
-GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId)
-	:strand_(boost::asio::make_strand(io)),roomId_(roomId)
+GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId,
+	int initialTimeMs,
+	int incrementMs)
+	:strand_(boost::asio::make_strand(io)),roomId_(roomId),initialTimeMs_(initialTimeMs), incrementMs_(incrementMs)
 {
 	// 初始化
 	board_.init();
+}
+
+void GameRoom::updateClockBeforeMove()
+{
+	auto now = steady_clock::now();
+
+	ClockState& current = (turn_ == Color::White) ? whiteClock_ : blackClock_;
+
+	int used = duration_cast<milliseconds>(now - current.lastStart).count();
+
+	current.remaining_ms -= used;
+
+	if (current.remaining_ms <= 0)
+	{
+		std::string winner =
+			(turn_ == Color::White) ? "black_win" : "white_win";
+
+		endGame(winner, "timeout");
+		return;
+	}
+
+	current.remaining_ms += incrementMs_;
 }
 
 void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> black)
@@ -23,6 +48,14 @@ void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> blac
 		{
 
 			state_ = GameState::Playing;
+
+			//初始化棋钟
+			auto now = std::chrono::steady_clock::now();
+
+			whiteClock_.remaining_ms = initialTimeMs_;
+			blackClock_.remaining_ms = initialTimeMs_;
+
+			whiteClock_.lastStart = now; //白方先计时
 
 			white_ = white;
 			black_ = black;
@@ -94,6 +127,9 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 		strand_,
 		[this, self, player, from, to, promotion]()
 		{
+			updateClockBeforeMove();
+			if (state_ == GameState::GameOver)
+				return;
 
 			if (player->color() != turn_) {
 				player->sendJson({
@@ -164,6 +200,11 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 				(turn_ == Color::White)
 				? Color::Black
 				: Color::White;
+
+			// 启动下一方计时
+			auto now = steady_clock::now();
+			ClockState& next = (turn_ == Color::White) ? whiteClock_ : blackClock_;
+			next.lastStart = now;
 
 			GameResult result =
 				CheckEvaluator::evaluate(board_, turn_);
@@ -404,7 +445,9 @@ void GameRoom::broadcastMove(const std::string& from, const std::string& to, std
 		{"from",from},
 		{"to",to},
 		{"fen", board_.toFEN(turn_, halfmoveClock_, fullmoveNumber_)},
-		{ "turn", turn_ == Color::White ? "white" : "black" }
+		{ "turn", turn_ == Color::White ? "white" : "black" },
+		{"white_time",whiteClock_.remaining_ms},
+		{"black_time",blackClock_.remaining_ms}
 	};
 
 	if (promotion.has_value())
@@ -420,7 +463,9 @@ void GameRoom::broadcastState()
 	json j = {
 		{"type", "state_update"},
 		{"fen", board_.toFEN(turn_, halfmoveClock_, fullmoveNumber_)},
-		{"turn", turn_ == Color::White ? "white" : "black"}
+		{"turn", turn_ == Color::White ? "white" : "black"},
+		{"white_time", whiteClock_.remaining_ms},
+		{"black_time", blackClock_.remaining_ms}
 	};
 
 	broadcastJson(j);

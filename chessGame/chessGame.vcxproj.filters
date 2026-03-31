@@ -93,5 +93,6 @@
     <ClInclude Include="net\Session.h" />
     <ClInclude Include="rules\Perft.h" />
     <ClInclude Include="rules\Rules.h" />
+    <ClInclude Include="game\TimeControl.h" />
   </ItemGroup>
 </Project>

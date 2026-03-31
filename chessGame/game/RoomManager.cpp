@@ -99,8 +99,12 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session)
 		auto opponent = waitingPvp_.front();
 		waitingPvp_.pop();
 
+		//时间
+		int initial = 300000;
+		int incre = 3000;
+
 		auto roomId = nextRoomId_++;
-		auto room = std::make_shared<GameRoom>(io_, roomId);
+		auto room = std::make_shared<GameRoom>(io_, roomId, initial, incre);
 		rooms_[roomId] = room;
 
 		session->setRoom(room);
@@ -128,9 +132,13 @@ void RoomManager::createPveRoom(std::shared_ptr<Session> session, const std::str
 
 	Color aiColor = (humanColor == Color::White) ? Color::Black : Color::White;
 
+	//时间
+	int initial = 300000;
+	int incre = 3000;
+
 	auto roomId = nextRoomId_++;
 
-	auto room = std::make_shared<GameRoom>(io_, roomId);
+	auto room = std::make_shared<GameRoom>(io_, roomId, initial, incre);
 	rooms_[roomId] = room;
 
 	auto human = std::make_shared<NetworkPlayer>(session, humanColor);

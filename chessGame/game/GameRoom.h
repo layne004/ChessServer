@@ -6,6 +6,7 @@
 #include <boost/asio.hpp>
 #include <json.hpp>
 using json = nlohmann::json;
+#include <chrono>
 
 class Session;
 
@@ -17,12 +18,23 @@ enum class GameState {
 	GameOver
 };
 
+struct ClockState
+{
+	int remaining_ms = 0;
+	std::chrono::steady_clock::time_point lastStart;
+};
+
 class GameRoom:public std::enable_shared_from_this<GameRoom>
 {
 public:
 	using RoomID = uint64_t;
-	GameRoom(boost::asio::io_context& io, RoomID roomId);
+	GameRoom(boost::asio::io_context& io, RoomID roomId,
+		int initialTimeMs = 300000,
+		int incrementMs = 3000);
 	~GameRoom() = default;
+
+	// 在走棋后更新时钟
+	void updateClockBeforeMove();
 
 	// 开始对战
 	void start(std::shared_ptr<Player> white, std::shared_ptr<Player> black);
@@ -81,5 +93,11 @@ private:
 
 	int halfmoveClock_ = 0;
 	int fullmoveNumber_ = 1;
+
+	int initialTimeMs_ = 300000; //默认 5 分钟
+	int incrementMs_ = 3000;	 //默认 +3 秒
+
+	ClockState whiteClock_;
+	ClockState blackClock_;
 };
 
