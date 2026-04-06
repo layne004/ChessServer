@@ -83,6 +83,10 @@ private:
 	void startClockTimer();
 	void checkTimeout(const boost::system::error_code& ec);
 
+	// 实现断线暂停时钟
+	void pauseClock();
+	void resumeClock();
+
 private:
 	boost::asio::strand<boost::asio::any_io_executor> strand_;
 	boost::asio::steady_timer clockTimer_;
@@ -104,5 +108,7 @@ private:
 
 	ClockState whiteClock_;
 	ClockState blackClock_;
+
+	bool clockPaused_ = false;
 };
 

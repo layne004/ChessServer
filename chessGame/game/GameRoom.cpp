@@ -79,6 +79,57 @@ void GameRoom::checkTimeout(const boost::system::error_code& ec)
 	startClockTimer();
 }
 
+void GameRoom::pauseClock()
+{
+	if (clockPaused_ || state_ != GameState::Playing)
+		return;
+
+	auto now = steady_clock::now();
+
+	// 结算当前玩家时间
+	ClockState& current = (turn_ == Color::White) ? whiteClock_ : blackClock_;
+
+	int used = duration_cast<milliseconds>(now - current.lastStart).count();
+
+	current.remaining_ms -= used;
+
+	if (current.remaining_ms <= 0)
+	{
+		std::string winner = (turn_ == Color::White) ? "black_win" : "white_win";
+		endGame(winner, "timeout");
+		return;
+	}
+
+	// 标记暂停
+	clockPaused_ = true;
+
+	// 停止定时器
+	clockTimer_.cancel();
+
+	broadcastState();
+	std::cout << "[Clock] paused in room " << roomId_ << std::endl;
+}
+
+void GameRoom::resumeClock()
+{
+	if (!clockPaused_ || state_ != GameState::Playing)
+		return;
+
+	auto now = steady_clock::now();
+
+	// 当前玩家重新开始计时
+	ClockState& current = (turn_ == Color::White) ? whiteClock_ : blackClock_;
+
+	current.lastStart = now;
+
+	clockPaused_ = false;
+
+	startClockTimer();
+
+	broadcastState();
+	std::cout << "[Clock] resumed in room " << roomId_ << std::endl;
+}
+
 void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> black)
 {
 	
@@ -164,6 +215,18 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 		);
 		return;
 	}
+
+	if (clockPaused_)
+	{
+		player->sendJson(
+			{
+				{"type", "error"},
+				{"message", "Game paused due to disconnect"}
+			}
+		);
+		return;
+	}
+
 	auto self = shared_from_this();
 
 	boost::asio::post(
@@ -336,6 +399,7 @@ void GameRoom::onPlayerDisconnected(const std::shared_ptr<Session>& session, con
 				return;
 
 			player->setConnected(false);
+			pauseClock();
 
 			std::cout << "Session disconnect: Player "<<player->id()<<" disconnected in room " << roomId_ << std::endl;
 
@@ -396,6 +460,11 @@ void GameRoom::reconnect(const std::shared_ptr<Session>& session, const std::str
 			net->setSession(session);
 			player->setConnected(true);
 			player->cancelDisconnectTimer(); //取消断线计时
+
+			if (white_ && black_ && white_->connected() && black_->connected())
+			{
+				resumeClock();
+			}
 
 			session->setRoom(shared_from_this());
 			session->setPlayer(player);
