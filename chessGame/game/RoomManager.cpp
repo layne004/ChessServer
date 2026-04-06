@@ -55,12 +55,12 @@ void RoomManager::handleReconnect(std::shared_ptr<Session> session, GameRoom::Ro
 }
 
 void RoomManager::handleMatch(std::shared_ptr<Session> session, const std::string& mode
-	, const std::string& level, const std::string& color)
+	, const std::string& level, const std::string& color, int initial, int increment)
 {
 	cleanupRooms();
 
 	if (mode == "pvp") {
-		matchPvp(session);
+		matchPvp(session, initial, increment);
 	}
 	else if (mode == "pve")
 	{
@@ -68,7 +68,7 @@ void RoomManager::handleMatch(std::shared_ptr<Session> session, const std::strin
 	}
 }
 
-void RoomManager::matchPvp(std::shared_ptr<Session> session)
+void RoomManager::matchPvp(std::shared_ptr<Session> session, int initial, int increment)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 
@@ -76,35 +76,36 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session)
 	if (session->getRoom())
 		return;
 
+	std::string key = makeBucketKey(initial, increment);
+	auto& queue = waitingBuckets_[key];
+
 	// 清理失效session
-	while (!waitingPvp_.empty())
+	while (!queue.empty())
 	{
-		auto s = waitingPvp_.front();
+		auto s = queue.front();
 
 		if (!s || !s->isAlive())
-			waitingPvp_.pop();
+			queue.pop();
 		else
 			break;
 	}
 
-	if (waitingPvp_.empty()) {
-		waitingPvp_.push(session);
+	if (queue.empty()) {
+		queue.push(session);
 
 		session->sendJson({
 			{"type", "matching"},
-			{"mode", "pvp"}
+			{"mode", "pvp"},
+			{"initial", initial},
+			{"increment", increment}
 		});
 	}
 	else {
-		auto opponent = waitingPvp_.front();
-		waitingPvp_.pop();
-
-		//时间
-		int initial = 300000;
-		int incre = 3000;
+		auto opponent = queue.front();
+		queue.pop();
 
 		auto roomId = nextRoomId_++;
-		auto room = std::make_shared<GameRoom>(io_, roomId, initial, incre);
+		auto room = std::make_shared<GameRoom>(io_, roomId, initial, increment);
 		rooms_[roomId] = room;
 
 		session->setRoom(room);
@@ -151,4 +152,9 @@ void RoomManager::createPveRoom(std::shared_ptr<Session> session, const std::str
 		room->start(human, ai);
 	else
 		room->start(ai, human);
+}
+
+std::string RoomManager::makeBucketKey(int initial, int increment)
+{
+	return std::to_string(initial) + "_" + std::to_string(increment);
 }

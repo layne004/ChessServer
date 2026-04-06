@@ -151,7 +151,17 @@ void Session::handleMessage(const std::string& msg)
 			if (j.contains("color"))
 				color = j["color"].get<std::string>();
 
-			room_manager_->handleMatch(shared_from_this(), mode, level, color);
+			// 新增：时间控制解析，默认5+3
+			int initial = 300000;
+			int increment = 3000; 
+
+			if (j.contains("initial") && j["initial"].is_number())
+				initial = j["initial"].get<int>();
+
+			if (j.contains("increment") && j["increment"].is_number())
+				increment = j["increment"].get<int>();
+
+			room_manager_->handleMatch(shared_from_this(), mode, level, color, initial, increment);
 		}
 		else if (type == "move")
 		{
