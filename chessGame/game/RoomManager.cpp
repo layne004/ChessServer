@@ -105,7 +105,7 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session, int initial, int in
 		queue.pop();
 
 		auto roomId = nextRoomId_++;
-		auto room = std::make_shared<GameRoom>(io_, roomId, initial, increment);
+		auto room = std::make_shared<GameRoom>(io_, roomId, GameRoom::Mode::PvP, initial, increment);
 		rooms_[roomId] = room;
 
 		session->setRoom(room);
@@ -139,7 +139,7 @@ void RoomManager::createPveRoom(std::shared_ptr<Session> session, const std::str
 
 	auto roomId = nextRoomId_++;
 
-	auto room = std::make_shared<GameRoom>(io_, roomId, initial, incre);
+	auto room = std::make_shared<GameRoom>(io_, roomId, GameRoom::Mode::PvE, initial, incre);
 	rooms_[roomId] = room;
 
 	auto human = std::make_shared<NetworkPlayer>(session, humanColor);

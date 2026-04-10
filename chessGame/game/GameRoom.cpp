@@ -7,10 +7,10 @@
 #include "AIPlayer.h"
 using namespace std::chrono;
 
-GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId,
+GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId, Mode mode,
 	int initialTimeMs,
 	int incrementMs)
-	:strand_(boost::asio::make_strand(io)), clockTimer_(io), roomId_(roomId),
+	:strand_(boost::asio::make_strand(io)), clockTimer_(io), roomId_(roomId),mode_(mode),
 	initialTimeMs_(initialTimeMs), incrementMs_(incrementMs)
 {
 	// 初始化
@@ -19,6 +19,9 @@ GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId,
 
 void GameRoom::updateClockBeforeMove()
 {
+	if (mode_ == Mode::PvE)
+		return;
+
 	auto now = steady_clock::now();
 
 	ClockState& current = (turn_ == Color::White) ? whiteClock_ : blackClock_;
@@ -41,6 +44,10 @@ void GameRoom::updateClockBeforeMove()
 
 void GameRoom::startClockTimer()
 {
+	// 人机对战无时间限制
+	if (mode_ == Mode::PvE)
+		return;
+
 	auto self = shared_from_this();
 
 	clockTimer_.expires_after(std::chrono::milliseconds(200));
@@ -347,7 +354,7 @@ void GameRoom::maybeAIMove()
 {
 	std::shared_ptr<Player> current = (turn_ == Color::White) ? white_ : black_;
 
-	if (!current->isAI())
+	if (!current->isAI() || mode_ == Mode::PvP)
 		return;
 
 	auto ai = std::dynamic_pointer_cast<AIPlayer>(current);
@@ -557,10 +564,14 @@ void GameRoom::broadcastMove(const std::string& from, const std::string& to, std
 		{"from",from},
 		{"to",to},
 		{"fen", board_.toFEN(turn_, halfmoveClock_, fullmoveNumber_)},
-		{ "turn", turn_ == Color::White ? "white" : "black" },
-		{"white_time",whiteClock_.remaining_ms},
-		{"black_time",blackClock_.remaining_ms}
+		{ "turn", turn_ == Color::White ? "white" : "black" }
 	};
+
+	if (mode_ == Mode::PvP)
+	{
+		j["white_time"] = whiteClock_.remaining_ms;
+		j["black_time"] = blackClock_.remaining_ms;
+	}
 
 	if (promotion.has_value())
 	{
@@ -575,10 +586,14 @@ void GameRoom::broadcastState()
 	json j = {
 		{"type", "state_update"},
 		{"fen", board_.toFEN(turn_, halfmoveClock_, fullmoveNumber_)},
-		{"turn", turn_ == Color::White ? "white" : "black"},
-		{"white_time", whiteClock_.remaining_ms},
-		{"black_time", blackClock_.remaining_ms}
+		{"turn", turn_ == Color::White ? "white" : "black"}
 	};
+
+	if (mode_ == Mode::PvP)
+	{
+		j["white_time"] = whiteClock_.remaining_ms;
+		j["black_time"] = blackClock_.remaining_ms;
+	}
 
 	broadcastJson(j);
 }

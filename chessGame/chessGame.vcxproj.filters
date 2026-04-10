@@ -21,78 +21,111 @@
     <Filter Include="rules">
       <UniqueIdentifier>{24bd5dc9-838c-4971-8ab1-a5fc55259cda}</UniqueIdentifier>
     </Filter>
-    <Filter Include="utils">
-      <UniqueIdentifier>{36daa309-75e0-4d7e-8b0d-21c5fc3fbeb0}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="core\Board.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="core\CheckEvaluator.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="core\MoveGenerator.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="core\MoveValidator.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="game\AIPlayer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="game\GameRoom.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="game\NetworkPlayer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="game\Player.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="game\PlayerIdGenerator.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="game\RoomManager.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="game\StockfishEngine.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="net\Server.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="net\Session.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="rules\Perft.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="rules\Rules.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="rules\Rules.cpp">
+      <Filter>rules</Filter>
+    </ClCompile>
+    <ClCompile Include="rules\Perft.cpp">
+      <Filter>rules</Filter>
+    </ClCompile>
+    <ClCompile Include="net\Server.cpp">
+      <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="net\Session.cpp">
+      <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="game\AIPlayer.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\GameRoom.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\NetworkPlayer.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\Player.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\PlayerIdGenerator.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\RoomManager.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\StockfishEngine.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MoveValidator.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\MoveGenerator.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\CheckEvaluator.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Board.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="core\Board.h" />
-    <ClInclude Include="core\CheckEvaluator.h" />
-    <ClInclude Include="core\Move.h" />
-    <ClInclude Include="core\MoveGenerator.h" />
-    <ClInclude Include="core\MoveValidator.h" />
-    <ClInclude Include="core\Piece.h" />
-    <ClInclude Include="game\AIPlayer.h" />
-    <ClInclude Include="game\GameRoom.h" />
-    <ClInclude Include="game\NetworkPlayer.h" />
-    <ClInclude Include="game\Player.h" />
-    <ClInclude Include="game\PlayerIdGenerator.h" />
-    <ClInclude Include="game\RoomManager.h" />
-    <ClInclude Include="game\StockfishEngine.h" />
-    <ClInclude Include="net\Server.h" />
-    <ClInclude Include="net\Session.h" />
-    <ClInclude Include="rules\Perft.h" />
-    <ClInclude Include="rules\Rules.h" />
-    <ClInclude Include="game\TimeControl.h" />
+    <ClInclude Include="rules\Perft.h">
+      <Filter>rules</Filter>
+    </ClInclude>
+    <ClInclude Include="rules\Rules.h">
+      <Filter>rules</Filter>
+    </ClInclude>
+    <ClInclude Include="net\Session.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="net\Server.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="game\AIPlayer.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\NetworkPlayer.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\GameRoom.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\Player.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\PlayerIdGenerator.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\RoomManager.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\StockfishEngine.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\TimeControl.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Board.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\CheckEvaluator.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Move.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\MoveGenerator.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\MoveValidator.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Piece.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

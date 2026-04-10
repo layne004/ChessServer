@@ -13,8 +13,11 @@ Session::Session(tcp::socket socket, std::shared_ptr<RoomManager> roomManager)
 }
 
 void Session::start() {
-	// OPTIMIZE: 客户端可选颜色
+	
 	alive_ = true;
+
+	sendConnectionMessage();
+
 	doRead();
 }
 
@@ -39,6 +42,12 @@ void Session::send(const std::string& msg)
 
 void Session::sendJson(const json& j)
 {
+	if (j.is_null()) {
+		std::cerr << "[sendJson] Warning: sending null JSON" << std::endl;
+	}
+	else {
+		std::cout << "[sendJson] Sending JSON: " << j.dump() << std::endl;
+	}
 	send(j.dump() + "\n");
 }
 
@@ -65,6 +74,21 @@ void Session::setPlayer(std::shared_ptr<Player> p)
 std::shared_ptr<Player> Session::getPlayer()
 {
 	return player_;
+}
+
+void Session::sendConnectionMessage() {
+	auto self = shared_from_this();
+
+	if (socket_.is_open()) {
+		json response;
+		response["type"] = "connected";
+		response["status"] = "success";
+		response["message"] = "connection success!";
+		sendJson(response);
+	}
+	else {
+		std::cerr << "Socket is not open. Cannot send message." << std::endl;
+	}
 }
 
 void Session::doWrite()

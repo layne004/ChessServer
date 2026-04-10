@@ -28,8 +28,13 @@ struct ClockState
 class GameRoom:public std::enable_shared_from_this<GameRoom>
 {
 public:
+	enum class Mode {
+		PvP, //玩家对战
+		PvE  //玩家与AI对战
+	};
+
 	using RoomID = uint64_t;
-	GameRoom(boost::asio::io_context& io, RoomID roomId,
+	GameRoom(boost::asio::io_context& io, RoomID roomId, Mode mode,
 		int initialTimeMs = 300000,
 		int incrementMs = 3000);
 	~GameRoom() = default;
@@ -103,6 +108,8 @@ private:
 	int halfmoveClock_ = 0;
 	int fullmoveNumber_ = 1;
 
+	Mode mode_; //记录当前模式
+
 	int initialTimeMs_ = 300000; //默认 5 分钟
 	int incrementMs_ = 3000;	 //默认 +3 秒
 
@@ -110,5 +117,6 @@ private:
 	ClockState blackClock_;
 
 	bool clockPaused_ = false;
+	
 };
 

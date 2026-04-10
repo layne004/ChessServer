@@ -29,6 +29,7 @@ public:
 	std::shared_ptr<Player> getPlayer();
 
 	bool isAlive() { return alive_; }
+	void sendConnectionMessage();
 
 private:
 	void doRead();
