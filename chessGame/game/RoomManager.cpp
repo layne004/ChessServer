@@ -13,17 +13,15 @@ RoomManager::RoomManager(boost::asio::io_context& io)
 void RoomManager::cleanupRooms()
 {
 	std::lock_guard<std::mutex> lock(mutex_);
+	purgeExpiredRoomCodeCacheLocked();
+	purgeExpiredWaitingRoomsLocked();
 
 	for (auto it = rooms_.begin(); it != rooms_.end();)
 	{
 		const bool isWaitingCreatedRoom = roomHostPlayersById_.find(it->first) != roomHostPlayersById_.end();
 		if (it->second->isEmpty() && !isWaitingCreatedRoom) {
-			auto codeIt = roomCodesById_.find(it->first);
-			if (codeIt != roomCodesById_.end()) {
-				roomIdByCode_.erase(codeIt->second);
-				roomCodesById_.erase(codeIt);
-			}
-			roomHostPlayersById_.erase(it->first);
+			eraseRoomMappingsLocked(it->first);
+			waitingRoomCreatedAtById_.erase(it->first);
 			it = rooms_.erase(it);
 		}
 		else {
@@ -171,6 +169,8 @@ void RoomManager::createRoom(std::shared_ptr<Session> session, int initial, int 
 {
 	cleanupRooms();
 	std::lock_guard<std::mutex> lock(mutex_);
+	purgeExpiredRoomCodeCacheLocked();
+	purgeExpiredWaitingRoomsLocked();
 
 	if (session->getRoom()) {
 		session->sendJson({
@@ -190,6 +190,7 @@ void RoomManager::createRoom(std::shared_ptr<Session> session, int initial, int 
 	rooms_[roomId] = room;
 	roomCodesById_[roomId] = roomCode;
 	roomIdByCode_[roomCode] = roomId;
+	waitingRoomCreatedAtById_[roomId] = SteadyClock::now();
 
 	session->setRoom(room);
 	auto host = std::make_shared<NetworkPlayer>(session, Color::White);
@@ -211,6 +212,8 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 {
 	cleanupRooms();
 	std::lock_guard<std::mutex> lock(mutex_);
+	purgeExpiredRoomCodeCacheLocked();
+	purgeExpiredWaitingRoomsLocked();
 	std::string normalizedCode = roomCode;
 	for (char& c : normalizedCode) {
 		c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
@@ -229,6 +232,14 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 
 	auto roomIdIt = roomIdByCode_.find(normalizedCode);
 	if (roomIdIt == roomIdByCode_.end()) {
+		if (expiredRoomCodes_.find(normalizedCode) != expiredRoomCodes_.end()) {
+			session->sendJson({
+				{"type", "error"},
+				{"code", "ROOM_EXPIRED"},
+				{"message", "join room failed: room expired"}
+			});
+			return;
+		}
 		session->sendJson({
 			{"type", "error"},
 			{"code", "ROOM_NOT_FOUND"},
@@ -249,6 +260,22 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 	}
 
 	auto room = roomIt->second;
+	auto createdAtIt = waitingRoomCreatedAtById_.find(room->id());
+	if (createdAtIt != waitingRoomCreatedAtById_.end()) {
+		const auto now = SteadyClock::now();
+		if (now - createdAtIt->second > kWaitingRoomTimeout) {
+			eraseRoomMappingsLocked(room->id());
+			waitingRoomCreatedAtById_.erase(room->id());
+			rooms_.erase(room->id());
+			session->sendJson({
+				{"type", "error"},
+				{"code", "ROOM_EXPIRED"},
+				{"message", "join room failed: room expired"}
+			});
+			return;
+		}
+	}
+
 	if (room->isFull()) {
 		session->sendJson({
 			{"type", "error"},
@@ -271,12 +298,8 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 	auto host = hostIt->second;
 	auto hostNet = std::dynamic_pointer_cast<NetworkPlayer>(host);
 	if (!hostNet || !hostNet->getSession() || !hostNet->getSession()->isAlive()) {
-		roomHostPlayersById_.erase(hostIt);
-		auto codeIt = roomCodesById_.find(room->id());
-		if (codeIt != roomCodesById_.end()) {
-			roomIdByCode_.erase(codeIt->second);
-			roomCodesById_.erase(codeIt);
-		}
+		eraseRoomMappingsLocked(room->id());
+		waitingRoomCreatedAtById_.erase(room->id());
 		rooms_.erase(room->id());
 		session->sendJson({
 			{"type", "error"},
@@ -286,7 +309,8 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 		return;
 	}
 
-	roomHostPlayersById_.erase(hostIt);
+	eraseRoomMappingsLocked(room->id());
+	waitingRoomCreatedAtById_.erase(room->id());
 
 	auto guest = std::make_shared<NetworkPlayer>(session, Color::Black);
 	session->setRoom(room);
@@ -363,4 +387,50 @@ std::string RoomManager::generateRoomCodeLocked() const
 	}
 
 	return "ROOM" + std::to_string(nextRoomId_.load());
+}
+
+void RoomManager::purgeExpiredWaitingRoomsLocked()
+{
+	const auto now = SteadyClock::now();
+	for (auto it = waitingRoomCreatedAtById_.begin(); it != waitingRoomCreatedAtById_.end();) {
+		if (now - it->second <= kWaitingRoomTimeout) {
+			++it;
+			continue;
+		}
+
+		const auto roomId = it->first;
+		auto codeIt = roomCodesById_.find(roomId);
+		if (codeIt != roomCodesById_.end()) {
+			expiredRoomCodes_[codeIt->second] = now;
+		}
+		auto roomIt = rooms_.find(roomId);
+		if (roomIt != rooms_.end()) {
+			rooms_.erase(roomIt);
+		}
+		eraseRoomMappingsLocked(roomId);
+		it = waitingRoomCreatedAtById_.erase(it);
+	}
+}
+
+void RoomManager::purgeExpiredRoomCodeCacheLocked()
+{
+	const auto now = SteadyClock::now();
+	for (auto it = expiredRoomCodes_.begin(); it != expiredRoomCodes_.end();) {
+		if (now - it->second > kExpiredCodeRetention) {
+			it = expiredRoomCodes_.erase(it);
+		}
+		else {
+			++it;
+		}
+	}
+}
+
+void RoomManager::eraseRoomMappingsLocked(GameRoom::RoomID roomId)
+{
+	auto codeIt = roomCodesById_.find(roomId);
+	if (codeIt != roomCodesById_.end()) {
+		roomIdByCode_.erase(codeIt->second);
+		roomCodesById_.erase(codeIt);
+	}
+	roomHostPlayersById_.erase(roomId);
 }
