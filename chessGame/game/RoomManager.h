@@ -25,6 +25,7 @@ public:
 private:
 	void matchPvp(std::shared_ptr<Session> session, int initial, int increment);
 	void createPveRoom(std::shared_ptr<Session> session, const std::string& level, const std::string& color);
+	void createLessonRoom();
 	std::string makeBucketKey(int initial, int increment);
 
 private:

@@ -2,11 +2,13 @@
 #include "RoomManager.h"
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 #include "Player.h"
 
 Session::Session(tcp::socket socket, std::shared_ptr<RoomManager> roomManager)
 	:socket_(std::move(socket)), 
 	strand_(boost::asio::make_strand(socket_.get_executor())),
+	buffer_(kMaxMessageBytes + 1),
 	room_manager_(std::move(roomManager))
 {
 
@@ -131,6 +133,12 @@ void Session::doRead() {
 					if (!msg.empty() && msg.back() == '\r')
 						msg.pop_back();
 
+					if (msg.size() > kMaxMessageBytes) {
+						sendProtocolError("MESSAGE_TOO_LARGE", "message exceeds max frame size");
+						disconnect();
+						return;
+					}
+
 					handleMessage(msg);
 					doRead();
 				}
@@ -149,6 +157,7 @@ void Session::handleMessage(const std::string& msg)
 		auto ep = socket_.remote_endpoint();
 		std::cout << "Session: Invalid message from " << ep.address().to_string()
 			<<": " << msg << std::endl;
+		sendProtocolError("INVALID_FRAME", "message must be single-line json object");
 		return;
 	}
 
@@ -157,6 +166,17 @@ void Session::handleMessage(const std::string& msg)
 	if (j.is_discarded())
 	{
 		std::cout << "Session: JSON parse failed: " << msg << std::endl;
+		sendProtocolError("INVALID_JSON", "json parse failed");
+		return;
+	}
+
+	if (!j.is_object()) {
+		sendProtocolError("INVALID_JSON_TYPE", "json payload must be an object", &j);
+		return;
+	}
+
+	if (!j.contains("type") || !j["type"].is_string()) {
+		sendProtocolError("MISSING_TYPE", "field 'type' is required and must be string", &j);
 		return;
 	}
 
@@ -164,6 +184,10 @@ void Session::handleMessage(const std::string& msg)
 		std::string type = j.at("type");
 
 		if (type == "match") {
+			if (!j.contains("mode") || !j["mode"].is_string()) {
+				sendProtocolError("INVALID_MATCH_MODE", "field 'mode' is required and must be string", &j);
+				return;
+			}
 			std::string mode = j.at("mode");
 
 			std::string level = "easy";
@@ -180,10 +204,10 @@ void Session::handleMessage(const std::string& msg)
 			int increment = 3000; 
 
 			if (j.contains("initial") && j["initial"].is_number())
-				initial = j["initial"].get<int>();
+				initial = std::clamp(j["initial"].get<int>(), 10000, 7200000); //10秒 - 2小时
 
 			if (j.contains("increment") && j["increment"].is_number())
-				increment = j["increment"].get<int>();
+				increment = std::clamp(j["increment"].get<int>(), 0, 60000); //0 - 60秒
 
 			room_manager_->handleMatch(shared_from_this(), mode, level, color, initial, increment);
 		}
@@ -191,8 +215,16 @@ void Session::handleMessage(const std::string& msg)
 		{
 
 			if (room_ && player_) {
+				if (!j.contains("from") || !j["from"].is_string() || !j.contains("to") || !j["to"].is_string()) {
+					sendProtocolError("INVALID_MOVE_FIELDS", "fields 'from' and 'to' are required and must be strings", &j);
+					return;
+				}
 				std::string from = j.at("from");
 				std::string to = j.at("to");
+				if (!isValidSquare(from) || !isValidSquare(to)) {
+					sendProtocolError("INVALID_MOVE_SQUARE", "move square must be algebraic format like e2/e4", &j);
+					return;
+				}
 				char promotion = 'q';
 				if (j.contains("promotion") && j["promotion"].is_string()) {
 					std::string prom = j["promotion"];
@@ -202,6 +234,28 @@ void Session::handleMessage(const std::string& msg)
 
 			}
 		}
+		else if (type == "lesson_move")
+		{
+			if (room_ && player_)
+			{
+				if (!j.contains("from") || !j["from"].is_string() || !j.contains("to") || !j["to"].is_string()) {
+					sendProtocolError("INVALID_MOVE_FIELDS", "fields 'from' and 'to' are required and must be strings", &j);
+					return;
+				}
+				std::string from = j.at("from");
+				std::string to = j.at("to");
+				if (!isValidSquare(from) || !isValidSquare(to)) {
+					sendProtocolError("INVALID_MOVE_SQUARE", "move square must be algebraic format like e2/e4", &j);
+					return;
+				}
+				char promotion = 'q';
+				if (j.contains("promotion") && j["promotion"].is_string()) {
+					std::string prom = j["promotion"];
+					if (!prom.empty()) promotion = prom[0];
+				}
+				room_->handleMove(player_, from, to, promotion);
+			}
+		}
 		else if (type == "resign")
 		{
 			if (room_)
@@ -209,22 +263,47 @@ void Session::handleMessage(const std::string& msg)
 		}
 		else if (type == "reconnect")
 		{
+			if (!j.contains("room_id") || !j.contains("player_id") || !j["player_id"].is_string()) {
+				sendProtocolError("INVALID_RECONNECT_FIELDS", "fields 'room_id' and 'player_id' are required", &j);
+				return;
+			}
 			auto roomId = j.at("room_id").get<GameRoom::RoomID>();
 			auto playerId = j.at("player_id").get<std::string>();
 
 			room_manager_->handleReconnect(shared_from_this(), roomId, playerId);
 		}
+		else {
+			sendProtocolError("UNKNOWN_TYPE", "unsupported message type: " + type, &j);
+		}
+		
 	}
 	catch (std::exception& e)
 	{
 		std::cout << "Session: JSON parse error: " << e.what() << std::endl;
-		json err = {
-			{"type", "error"},
-			{"message", e.what()}
-		};
-		sendJson(err);
+		sendProtocolError("BAD_REQUEST", e.what(), &j);
 	}
 
+}
+
+void Session::sendProtocolError(const std::string& code, const std::string& message, const json* request)
+{
+	json err = {
+		{"type", "error"},
+		{"code", code},
+		{"message", message}
+	};
+	if (request != nullptr && request->is_object() && request->contains("request_id")) {
+		err["request_id"] = (*request)["request_id"];
+	}
+	sendJson(err);
+}
+
+bool Session::isValidSquare(const std::string& square)
+{
+	if (square.size() != 2) {
+		return false;
+	}
+	return (square[0] >= 'a' && square[0] <= 'h') && (square[1] >= '1' && square[1] <= '8');
 }
 
 // disconnect也添加进post，防止重复断开

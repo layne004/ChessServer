@@ -8,7 +8,7 @@
 using json = nlohmann::json;
 #include <chrono>
 #include <boost/asio/steady_timer.hpp>
-
+#include "LessonStep.h"
 class Session;
 
 class Player;
@@ -30,7 +30,8 @@ class GameRoom:public std::enable_shared_from_this<GameRoom>
 public:
 	enum class Mode {
 		PvP, //玩家对战
-		PvE  //玩家与AI对战
+		PvE,  //玩家与AI对战
+		Lesson //教学模式
 	};
 
 	using RoomID = uint64_t;
@@ -50,6 +51,10 @@ public:
 
 	// 处理AI玩家走棋
 	void maybeAIMove();
+
+	// 处理教学走棋
+	void handleLessonMove(std::shared_ptr<Player> player,
+		const std::string& from, const std::string& to, char promotion = 'q');
 
 	// 处理玩家主动认输
 	void handleResign(const std::shared_ptr<Player> player);
@@ -117,6 +122,9 @@ private:
 	ClockState blackClock_;
 
 	bool clockPaused_ = false;
-	
+
+	// 教学模式
+	int lessonStep_ = 0;
+	std::vector<LessonStep> lessonSteps_;
 };
 

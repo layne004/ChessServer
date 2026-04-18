@@ -154,6 +154,11 @@ void RoomManager::createPveRoom(std::shared_ptr<Session> session, const std::str
 		room->start(ai, human);
 }
 
+void RoomManager::createLessonRoom()
+{
+
+}
+
 std::string RoomManager::makeBucketKey(int initial, int increment)
 {
 	return std::to_string(initial) + "_" + std::to_string(increment);

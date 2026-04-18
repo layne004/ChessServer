@@ -5,6 +5,7 @@
 #include <iostream>
 #include "NetworkPlayer.h"
 #include "AIPlayer.h"
+#include "LessonStep.h"
 using namespace std::chrono;
 
 GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId, Mode mode,
@@ -254,6 +255,12 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 
 			Move move = parseMove(from, to, promotion);
 
+			if (mode_ == Mode::Lesson)
+			{
+				handleLessonMove(player, from, to, promotion);
+				return;
+			}
+
 			if (!MoveValidator::isValid(board_, move, turn_))
 			{
 				player->sendJson(
@@ -368,6 +375,36 @@ void GameRoom::maybeAIMove()
 				self->handleMove(current, move.from, move.to, move.promotion);
 			}
 		});
+}
+
+void GameRoom::handleLessonMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to, char promotion)
+{
+	auto& step = lessonSteps_[lessonStep_];
+
+	if (from == step.from && to == step.to)
+	{
+		board_.applyMove(parseMove(from, to, promotion));
+
+		lessonStep_++;
+
+		broadcastJson({
+			{"type", "lesson_correct"},
+			{"next_step", lessonStep_}
+		});
+
+		if (lessonStep_ >= lessonSteps_.size())
+		{
+			endGame("lesson_complete", "done");
+		}
+		return;
+
+	}
+
+	broadcastJson({
+		{"type", "lesson_wrong"},
+		{"hint", step.hint}
+	});
+
 }
 
 void GameRoom::handleResign(const std::shared_ptr<Player> player)

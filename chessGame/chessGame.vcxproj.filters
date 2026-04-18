@@ -21,6 +21,9 @@
     <Filter Include="rules">
       <UniqueIdentifier>{24bd5dc9-838c-4971-8ab1-a5fc55259cda}</UniqueIdentifier>
     </Filter>
+    <Filter Include="lesson">
+      <UniqueIdentifier>{c3e7a38e-aa66-4794-8a35-b65093a270c8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -126,6 +129,12 @@
     </ClInclude>
     <ClInclude Include="core\Piece.h">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="lesson\LessonStep.h">
+      <Filter>lesson</Filter>
+    </ClInclude>
+    <ClInclude Include="lesson\LessonController.h">
+      <Filter>lesson</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

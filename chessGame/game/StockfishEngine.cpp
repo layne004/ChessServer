@@ -185,7 +185,7 @@ std::string StockfishEngine::getBestMove(const std::string& fen, int depth)
 
 void StockfishEngine::asyncGetBestMove(const std::string& fen, int depth, Callback cb)
 {
-    // 从 开线程 -> 压入队列并唤醒worker;
+    // 开线程 -> 压入队列并唤醒worker;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         tasks_.push(Task{ fen, depth, cb });

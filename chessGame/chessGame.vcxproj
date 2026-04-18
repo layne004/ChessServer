@@ -79,7 +79,7 @@
     <LibraryPath>D:\Download\boost_1_87_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>D:\Download\boost_1_87_0;D:\Download\chess\ChessServer\third_party;D:\Download\chess\ChessServer\chessGame\rules;D:\Download\chess\ChessServer\chessGame\net;D:\Download\chess\ChessServer\chessGame\game;D:\Download\chess\ChessServer\chessGame\core;D:\Download\chess\ChessServer\chessGame\utils;$(IncludePath)</IncludePath>
+    <IncludePath>D:\Download\boost_1_87_0;D:\Download\chess\ChessServer\third_party;D:\Download\chess\ChessServer\chessGame\rules;D:\Download\chess\ChessServer\chessGame\net;D:\Download\chess\ChessServer\chessGame\game;D:\Download\chess\ChessServer\chessGame\core;D:\Download\chess\ChessServer\chessGame\lesson;$(IncludePath)</IncludePath>
     <LibraryPath>D:\Download\boost_1_87_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -123,7 +123,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Download\chess\ChessServer\chessGame\utils;D:\Code\chess\chessGame\chessGame\rules;D:\Code\chess\chessGame\chessGame\net;D:\Code\chess\chessGame\chessGame\game;D:\Code\chess\chessGame\chessGame\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Download\chess\ChessServer\chessGame\lesson;D:\Download\chess\ChessServer\chessGame\utils;D:\Code\chess\chessGame\chessGame\rules;D:\Code\chess\chessGame\chessGame\net;D:\Code\chess\chessGame\chessGame\game;D:\Code\chess\chessGame\chessGame\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -179,6 +179,8 @@
     <ClInclude Include="game\RoomManager.h" />
     <ClInclude Include="game\StockfishEngine.h" />
     <ClInclude Include="game\TimeControl.h" />
+    <ClInclude Include="lesson\LessonController.h" />
+    <ClInclude Include="lesson\LessonStep.h" />
     <ClInclude Include="net\Server.h" />
     <ClInclude Include="net\Session.h" />
     <ClInclude Include="rules\Perft.h" />

@@ -15,6 +15,8 @@ class Player;
 class Session:public std::enable_shared_from_this<Session>
 {
 public:
+	static constexpr std::size_t kMaxMessageBytes = 64 * 1024; // 64KB single-line JSON frame
+
 	Session(tcp::socket socket, std::shared_ptr<RoomManager> roomManager);
 	void start();
 
@@ -36,6 +38,8 @@ private:
 	void doWrite();
 	void handleMessage(const std::string& msg);
 	void disconnect();
+	void sendProtocolError(const std::string& code, const std::string& message, const json* request = nullptr);
+	static bool isValidSquare(const std::string& square);
 
 	std::atomic<bool> alive_{true};
 	tcp::socket socket_;
