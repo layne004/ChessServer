@@ -2,6 +2,8 @@
 #include "Session.h"
 #include "NetworkPlayer.h"
 #include "AIPlayer.h"
+#include <random>
+#include <cctype>
 
 RoomManager::RoomManager(boost::asio::io_context& io)
 	:io_(io)
@@ -14,10 +16,19 @@ void RoomManager::cleanupRooms()
 
 	for (auto it = rooms_.begin(); it != rooms_.end();)
 	{
-		if (it->second->isEmpty())
+		const bool isWaitingCreatedRoom = roomHostPlayersById_.find(it->first) != roomHostPlayersById_.end();
+		if (it->second->isEmpty() && !isWaitingCreatedRoom) {
+			auto codeIt = roomCodesById_.find(it->first);
+			if (codeIt != roomCodesById_.end()) {
+				roomIdByCode_.erase(codeIt->second);
+				roomCodesById_.erase(codeIt);
+			}
+			roomHostPlayersById_.erase(it->first);
 			it = rooms_.erase(it);
-		else
+		}
+		else {
 			++it;
+		}
 	}
 }
 
@@ -75,6 +86,8 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session, int initial, int in
 	// 如果已经在匹配队列就拒绝
 	if (session->getRoom())
 		return;
+
+	removeFromWaitingBucketsLocked(session);
 
 	std::string key = makeBucketKey(initial, increment);
 	auto& queue = waitingBuckets_[key];
@@ -154,6 +167,151 @@ void RoomManager::createPveRoom(std::shared_ptr<Session> session, const std::str
 		room->start(ai, human);
 }
 
+void RoomManager::createRoom(std::shared_ptr<Session> session, int initial, int increment)
+{
+	cleanupRooms();
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	if (session->getRoom()) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "ALREADY_IN_ROOM"},
+			{"message", "create room failed: already in room"}
+		});
+		return;
+	}
+
+	removeFromWaitingBucketsLocked(session);
+
+	auto roomId = nextRoomId_++;
+	auto room = std::make_shared<GameRoom>(io_, roomId, GameRoom::Mode::PvP, initial, increment);
+	auto roomCode = generateRoomCodeLocked();
+
+	rooms_[roomId] = room;
+	roomCodesById_[roomId] = roomCode;
+	roomIdByCode_[roomCode] = roomId;
+
+	session->setRoom(room);
+	auto host = std::make_shared<NetworkPlayer>(session, Color::White);
+	session->setPlayer(host);
+	roomHostPlayersById_[roomId] = host;
+
+	session->sendJson({
+		{"type", "room_created"},
+		{"room_id", roomId},
+		{"room_code", roomCode},
+		{"player_id", host->id()},
+		{"color", "white"},
+		{"initial", initial},
+		{"increment", increment}
+	});
+}
+
+void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& roomCode)
+{
+	cleanupRooms();
+	std::lock_guard<std::mutex> lock(mutex_);
+	std::string normalizedCode = roomCode;
+	for (char& c : normalizedCode) {
+		c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+	}
+
+	if (session->getRoom()) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "ALREADY_IN_ROOM"},
+			{"message", "join room failed: already in room"}
+		});
+		return;
+	}
+
+	removeFromWaitingBucketsLocked(session);
+
+	auto roomIdIt = roomIdByCode_.find(normalizedCode);
+	if (roomIdIt == roomIdByCode_.end()) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "ROOM_NOT_FOUND"},
+			{"message", "join room failed: room not found"}
+		});
+		return;
+	}
+
+	auto roomIt = rooms_.find(roomIdIt->second);
+	if (roomIt == rooms_.end()) {
+		roomIdByCode_.erase(roomIdIt);
+		session->sendJson({
+			{"type", "error"},
+			{"code", "ROOM_NOT_FOUND"},
+			{"message", "join room failed: room not found"}
+		});
+		return;
+	}
+
+	auto room = roomIt->second;
+	if (room->isFull()) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "ROOM_FULL"},
+			{"message", "join room failed: room is full"}
+		});
+		return;
+	}
+
+	auto hostIt = roomHostPlayersById_.find(room->id());
+	if (hostIt == roomHostPlayersById_.end() || !hostIt->second) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "ROOM_HOST_OFFLINE"},
+			{"message", "join room failed: room host unavailable"}
+		});
+		return;
+	}
+
+	auto host = hostIt->second;
+	auto hostNet = std::dynamic_pointer_cast<NetworkPlayer>(host);
+	if (!hostNet || !hostNet->getSession() || !hostNet->getSession()->isAlive()) {
+		roomHostPlayersById_.erase(hostIt);
+		auto codeIt = roomCodesById_.find(room->id());
+		if (codeIt != roomCodesById_.end()) {
+			roomIdByCode_.erase(codeIt->second);
+			roomCodesById_.erase(codeIt);
+		}
+		rooms_.erase(room->id());
+		session->sendJson({
+			{"type", "error"},
+			{"code", "ROOM_HOST_OFFLINE"},
+			{"message", "join room failed: room host disconnected"}
+		});
+		return;
+	}
+
+	roomHostPlayersById_.erase(hostIt);
+
+	auto guest = std::make_shared<NetworkPlayer>(session, Color::Black);
+	session->setRoom(room);
+	session->setPlayer(guest);
+
+	room->start(host, guest);
+}
+
+void RoomManager::cancelMatch(std::shared_ptr<Session> session)
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+	if (removeFromWaitingBucketsLocked(session)) {
+		session->sendJson({
+			{"type", "match_cancelled"}
+		});
+		return;
+	}
+
+	session->sendJson({
+		{"type", "error"},
+		{"code", "NOT_IN_MATCH_QUEUE"},
+		{"message", "cancel match failed: session not in queue"}
+	});
+}
+
 void RoomManager::createLessonRoom()
 {
 
@@ -162,4 +320,47 @@ void RoomManager::createLessonRoom()
 std::string RoomManager::makeBucketKey(int initial, int increment)
 {
 	return std::to_string(initial) + "_" + std::to_string(increment);
+}
+
+bool RoomManager::removeFromWaitingBucketsLocked(const std::shared_ptr<Session>& session)
+{
+	bool removed = false;
+	for (auto& item : waitingBuckets_) {
+		auto& q = item.second;
+		std::queue<std::shared_ptr<Session>> rebuilt;
+		while (!q.empty()) {
+			auto cur = q.front();
+			q.pop();
+			if (cur == session) {
+				removed = true;
+				continue;
+			}
+			if (cur && cur->isAlive()) {
+				rebuilt.push(cur);
+			}
+		}
+		q = std::move(rebuilt);
+	}
+	return removed;
+}
+
+std::string RoomManager::generateRoomCodeLocked() const
+{
+	static const char alphabet[] = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+	static constexpr std::size_t kCodeLen = 6;
+	thread_local std::mt19937 rng{ std::random_device{}() };
+	std::uniform_int_distribution<std::size_t> dist(0, sizeof(alphabet) - 2);
+
+	for (int attempt = 0; attempt < 32; ++attempt) {
+		std::string code;
+		code.reserve(kCodeLen);
+		for (std::size_t i = 0; i < kCodeLen; ++i) {
+			code.push_back(alphabet[dist(rng)]);
+		}
+		if (roomIdByCode_.find(code) == roomIdByCode_.end()) {
+			return code;
+		}
+	}
+
+	return "ROOM" + std::to_string(nextRoomId_.load());
 }

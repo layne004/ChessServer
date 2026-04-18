@@ -211,6 +211,32 @@ void Session::handleMessage(const std::string& msg)
 
 			room_manager_->handleMatch(shared_from_this(), mode, level, color, initial, increment);
 		}
+		else if (type == "create_room")
+		{
+			int initial = 300000;
+			int increment = 3000;
+
+			if (j.contains("initial") && j["initial"].is_number_integer()) {
+				initial = std::clamp(j["initial"].get<int>(), 10000, 7200000);
+			}
+			if (j.contains("increment") && j["increment"].is_number_integer()) {
+				increment = std::clamp(j["increment"].get<int>(), 0, 60000);
+			}
+
+			room_manager_->createRoom(shared_from_this(), initial, increment);
+		}
+		else if (type == "join_room")
+		{
+			if (!j.contains("room_code") || !j["room_code"].is_string()) {
+				sendProtocolError("INVALID_JOIN_ROOM_CODE", "field 'room_code' is required and must be string", &j);
+				return;
+			}
+			room_manager_->joinRoom(shared_from_this(), j["room_code"].get<std::string>());
+		}
+		else if (type == "cancel_match")
+		{
+			room_manager_->cancelMatch(shared_from_this());
+		}
 		else if (type == "move")
 		{
 
