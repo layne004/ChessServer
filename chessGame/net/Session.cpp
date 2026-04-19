@@ -1,25 +1,23 @@
 #include "Session.h"
 #include "RoomManager.h"
+#include "Player.h"
+#include <algorithm>
 #include <iostream>
 #include <sstream>
-#include <algorithm>
-#include "Player.h"
+#include <unordered_map>
 
 Session::Session(tcp::socket socket, std::shared_ptr<RoomManager> roomManager)
-	:socket_(std::move(socket)), 
+	: socket_(std::move(socket)),
 	strand_(boost::asio::make_strand(socket_.get_executor())),
 	buffer_(kMaxMessageBytes + 1),
 	room_manager_(std::move(roomManager))
 {
-
 }
 
-void Session::start() {
-	
+void Session::start()
+{
 	alive_ = true;
-
 	sendConnectionMessage();
-
 	doRead();
 }
 
@@ -30,16 +28,14 @@ void Session::send(const std::string& msg)
 	boost::asio::post(strand_,
 		[this, self, msg]()
 		{
-			bool isWriting = !write_queue_.empty();
+			const bool isWriting = !write_queue_.empty();
 			write_queue_.push_back(msg);
 
 			if (!isWriting)
 			{
 				doWrite();
 			}
-		}
-	);
-	
+		});
 }
 
 void Session::sendJson(const json& j)
@@ -78,19 +74,18 @@ std::shared_ptr<Player> Session::getPlayer()
 	return player_;
 }
 
-void Session::sendConnectionMessage() {
-	auto self = shared_from_this();
-
-	if (socket_.is_open()) {
-		json response;
-		response["type"] = "connected";
-		response["status"] = "success";
-		response["message"] = "connection success!";
-		sendJson(response);
-	}
-	else {
+void Session::sendConnectionMessage()
+{
+	if (!socket_.is_open()) {
 		std::cerr << "Socket is not open. Cannot send message." << std::endl;
+		return;
 	}
+
+	json response;
+	response["type"] = "connected";
+	response["status"] = "success";
+	response["message"] = "connection success!";
+	sendJson(response);
 }
 
 void Session::doWrite()
@@ -101,37 +96,38 @@ void Session::doWrite()
 		boost::asio::buffer(write_queue_.front()),
 		boost::asio::bind_executor(
 			strand_,
-			[this, self](boost::system::error_code ec, std::size_t) {
+			[this, self](boost::system::error_code ec, std::size_t)
+			{
 				if (!ec) {
 					write_queue_.pop_front();
 					if (!write_queue_.empty())
 					{
 						doWrite();
 					}
-					
-				}else {
+				}
+				else {
 					disconnect();
 				}
-
-			})
-	);
+			}));
 }
 
-void Session::doRead() {
-	auto self(shared_from_this());
+void Session::doRead()
+{
+	auto self = shared_from_this();
 	boost::asio::async_read_until(
 		socket_, buffer_, '\n',
 		boost::asio::bind_executor(
 			strand_,
-			[this, self](boost::system::error_code ec, std::size_t) {
+			[this, self](boost::system::error_code ec, std::size_t)
+			{
 				if (!ec) {
 					std::string msg;
 					std::istream is(&buffer_);
 					std::getline(is, msg);
 
-					// 处理末尾\r
-					if (!msg.empty() && msg.back() == '\r')
+					if (!msg.empty() && msg.back() == '\r') {
 						msg.pop_back();
+					}
 
 					if (msg.size() > kMaxMessageBytes) {
 						sendProtocolError("MESSAGE_TOO_LARGE", "message exceeds max frame size");
@@ -145,9 +141,7 @@ void Session::doRead() {
 				else {
 					disconnect();
 				}
-			}
-		)
-	);
+			}));
 }
 
 void Session::handleMessage(const std::string& msg)
@@ -156,7 +150,7 @@ void Session::handleMessage(const std::string& msg)
 	{
 		auto ep = socket_.remote_endpoint();
 		std::cout << "Session: Invalid message from " << ep.address().to_string()
-			<<": " << msg << std::endl;
+			<< ": " << msg << std::endl;
 		sendProtocolError("INVALID_FRAME", "message must be single-line json object");
 		return;
 	}
@@ -181,138 +175,141 @@ void Session::handleMessage(const std::string& msg)
 	}
 
 	try {
-		std::string type = j.at("type");
-
-		if (type == "match") {
-			if (!j.contains("mode") || !j["mode"].is_string()) {
-				sendProtocolError("INVALID_MATCH_MODE", "field 'mode' is required and must be string", &j);
-				return;
-			}
-			std::string mode = j.at("mode");
-
-			std::string level = "easy";
-			std::string color = "random";
-
-			if (j.contains("level"))
-				level = j["level"].get<std::string>();
-
-			if (j.contains("color"))
-				color = j["color"].get<std::string>();
-
-			// 新增：时间控制解析，默认5+3
-			int initial = 300000;
-			int increment = 3000; 
-
-			if (j.contains("initial") && j["initial"].is_number())
-				initial = std::clamp(j["initial"].get<int>(), 10000, 7200000); //10秒 - 2小时
-
-			if (j.contains("increment") && j["increment"].is_number())
-				increment = std::clamp(j["increment"].get<int>(), 0, 60000); //0 - 60秒
-
-			room_manager_->handleMatch(shared_from_this(), mode, level, color, initial, increment);
-		}
-		else if (type == "create_room")
-		{
-			int initial = 300000;
-			int increment = 3000;
-
-			if (j.contains("initial") && j["initial"].is_number_integer()) {
-				initial = std::clamp(j["initial"].get<int>(), 10000, 7200000);
-			}
-			if (j.contains("increment") && j["increment"].is_number_integer()) {
-				increment = std::clamp(j["increment"].get<int>(), 0, 60000);
-			}
-
-			room_manager_->createRoom(shared_from_this(), initial, increment);
-		}
-		else if (type == "join_room")
-		{
-			if (!j.contains("room_code") || !j["room_code"].is_string()) {
-				sendProtocolError("INVALID_JOIN_ROOM_CODE", "field 'room_code' is required and must be string", &j);
-				return;
-			}
-			room_manager_->joinRoom(shared_from_this(), j["room_code"].get<std::string>());
-		}
-		else if (type == "cancel_match")
-		{
-			room_manager_->cancelMatch(shared_from_this());
-		}
-		else if (type == "close_room")
-		{
-			room_manager_->closeRoom(shared_from_this());
-		}
-		else if (type == "move")
-		{
-
-			if (room_ && player_) {
-				if (!j.contains("from") || !j["from"].is_string() || !j.contains("to") || !j["to"].is_string()) {
-					sendProtocolError("INVALID_MOVE_FIELDS", "fields 'from' and 'to' are required and must be strings", &j);
-					return;
-				}
-				std::string from = j.at("from");
-				std::string to = j.at("to");
-				if (!isValidSquare(from) || !isValidSquare(to)) {
-					sendProtocolError("INVALID_MOVE_SQUARE", "move square must be algebraic format like e2/e4", &j);
-					return;
-				}
-				char promotion = 'q';
-				if (j.contains("promotion") && j["promotion"].is_string()) {
-					std::string prom = j["promotion"];
-					if (!prom.empty()) promotion = prom[0];
-				}
-				room_->handleMove(player_, from, to, promotion);
-
-			}
-		}
-		else if (type == "lesson_move")
-		{
-			if (room_ && player_)
-			{
-				if (!j.contains("from") || !j["from"].is_string() || !j.contains("to") || !j["to"].is_string()) {
-					sendProtocolError("INVALID_MOVE_FIELDS", "fields 'from' and 'to' are required and must be strings", &j);
-					return;
-				}
-				std::string from = j.at("from");
-				std::string to = j.at("to");
-				if (!isValidSquare(from) || !isValidSquare(to)) {
-					sendProtocolError("INVALID_MOVE_SQUARE", "move square must be algebraic format like e2/e4", &j);
-					return;
-				}
-				char promotion = 'q';
-				if (j.contains("promotion") && j["promotion"].is_string()) {
-					std::string prom = j["promotion"];
-					if (!prom.empty()) promotion = prom[0];
-				}
-				room_->handleMove(player_, from, to, promotion);
-			}
-		}
-		else if (type == "resign")
-		{
-			if (room_)
-				room_->handleResign(player_);
-		}
-		else if (type == "reconnect")
-		{
-			if (!j.contains("room_id") || !j.contains("player_id") || !j["player_id"].is_string()) {
-				sendProtocolError("INVALID_RECONNECT_FIELDS", "fields 'room_id' and 'player_id' are required", &j);
-				return;
-			}
-			auto roomId = j.at("room_id").get<GameRoom::RoomID>();
-			auto playerId = j.at("player_id").get<std::string>();
-
-			room_manager_->handleReconnect(shared_from_this(), roomId, playerId);
-		}
-		else {
-			sendProtocolError("UNKNOWN_TYPE", "unsupported message type: " + type, &j);
-		}
-		
+		dispatchMessage(j);
 	}
 	catch (std::exception& e)
 	{
 		std::cout << "Session: JSON parse error: " << e.what() << std::endl;
 		sendProtocolError("BAD_REQUEST", e.what(), &j);
 	}
+}
 
+void Session::dispatchMessage(const json& j)
+{
+	static const std::unordered_map<std::string, void (Session::*)(const json&)> handlers = {
+		{"match", &Session::handleMatchMessage},
+		{"create_room", &Session::handleCreateRoomMessage},
+		{"join_room", &Session::handleJoinRoomMessage},
+		{"cancel_match", &Session::handleCancelMatchMessage},
+		{"close_room", &Session::handleCloseRoomMessage},
+		{"move", &Session::handleMoveMessage},
+		{"lesson_move", &Session::handleLessonMoveMessage},
+		{"resign", &Session::handleResignMessage},
+		{"reconnect", &Session::handleReconnectMessage},
+	};
+
+	const std::string type = j.at("type").get<std::string>();
+	const auto it = handlers.find(type);
+	if (it == handlers.end()) {
+		sendProtocolError("UNKNOWN_TYPE", "unsupported message type: " + type, &j);
+		return;
+	}
+
+	(this->*(it->second))(j);
+}
+
+void Session::handleMatchMessage(const json& j)
+{
+	std::string mode;
+	if (!tryGetStringField(j, "mode", mode, "INVALID_MATCH_MODE",
+		"field 'mode' is required and must be string")) {
+		return;
+	}
+
+	std::string level = "easy";
+	std::string color = "random";
+
+	if (j.contains("level") && j["level"].is_string()) {
+		level = j["level"].get<std::string>();
+	}
+
+	if (j.contains("color") && j["color"].is_string()) {
+		color = j["color"].get<std::string>();
+	}
+
+	const int initial = getClampedIntField(j, "initial", 300000, 10000, 7200000);
+	const int increment = getClampedIntField(j, "increment", 3000, 0, 60000);
+
+	room_manager_->handleMatch(shared_from_this(), mode, level, color, initial, increment);
+}
+
+void Session::handleCreateRoomMessage(const json& j)
+{
+	const int initial = getClampedIntField(j, "initial", 300000, 10000, 7200000, true);
+	const int increment = getClampedIntField(j, "increment", 3000, 0, 60000, true);
+	room_manager_->createRoom(shared_from_this(), initial, increment);
+}
+
+void Session::handleJoinRoomMessage(const json& j)
+{
+	std::string roomCode;
+	if (!tryGetStringField(j, "room_code", roomCode, "INVALID_JOIN_ROOM_CODE",
+		"field 'room_code' is required and must be string")) {
+		return;
+	}
+
+	room_manager_->joinRoom(shared_from_this(), roomCode);
+}
+
+void Session::handleCancelMatchMessage(const json&)
+{
+	room_manager_->cancelMatch(shared_from_this());
+}
+
+void Session::handleCloseRoomMessage(const json&)
+{
+	room_manager_->closeRoom(shared_from_this());
+}
+
+void Session::handleMoveMessage(const json& j)
+{
+	if (!room_ || !player_) {
+		return;
+	}
+
+	std::string from;
+	std::string to;
+	char promotion = 'q';
+	if (!tryGetMovePayload(j, from, to, promotion)) {
+		return;
+	}
+
+	room_->handleMove(player_, from, to, promotion);
+}
+
+void Session::handleLessonMoveMessage(const json& j)
+{
+	if (!room_ || !player_) {
+		return;
+	}
+
+	std::string from;
+	std::string to;
+	char promotion = 'q';
+	if (!tryGetMovePayload(j, from, to, promotion)) {
+		return;
+	}
+
+	room_->handleLessonMove(player_, from, to, promotion);
+}
+
+void Session::handleResignMessage(const json&)
+{
+	if (room_) {
+		room_->handleResign(player_);
+	}
+}
+
+void Session::handleReconnectMessage(const json& j)
+{
+	if (!j.contains("room_id") || !j.contains("player_id") || !j["player_id"].is_string()) {
+		sendProtocolError("INVALID_RECONNECT_FIELDS", "fields 'room_id' and 'player_id' are required", &j);
+		return;
+	}
+
+	const auto roomId = j.at("room_id").get<GameRoom::RoomID>();
+	const auto playerId = j.at("player_id").get<std::string>();
+	room_manager_->handleReconnect(shared_from_this(), roomId, playerId);
 }
 
 void Session::sendProtocolError(const std::string& code, const std::string& message, const json* request)
@@ -328,6 +325,59 @@ void Session::sendProtocolError(const std::string& code, const std::string& mess
 	sendJson(err);
 }
 
+bool Session::tryGetStringField(const json& j, const char* field, std::string& out,
+	const char* errorCode, const char* errorMessage)
+{
+	if (!j.contains(field) || !j[field].is_string()) {
+		sendProtocolError(errorCode, errorMessage, &j);
+		return false;
+	}
+
+	out = j.at(field).get<std::string>();
+	return true;
+}
+
+int Session::getClampedIntField(const json& j, const char* field, int defaultValue,
+	int minValue, int maxValue, bool integerOnly) const
+{
+	if (!j.contains(field)) {
+		return defaultValue;
+	}
+
+	const bool validNumber = integerOnly ? j[field].is_number_integer() : j[field].is_number();
+	if (!validNumber) {
+		return defaultValue;
+	}
+
+	return std::clamp(j[field].get<int>(), minValue, maxValue);
+}
+
+bool Session::tryGetMovePayload(const json& j, std::string& from, std::string& to, char& promotion)
+{
+	if (!j.contains("from") || !j["from"].is_string() || !j.contains("to") || !j["to"].is_string()) {
+		sendProtocolError("INVALID_MOVE_FIELDS", "fields 'from' and 'to' are required and must be strings", &j);
+		return false;
+	}
+
+	from = j.at("from").get<std::string>();
+	to = j.at("to").get<std::string>();
+
+	if (!isValidSquare(from) || !isValidSquare(to)) {
+		sendProtocolError("INVALID_MOVE_SQUARE", "move square must be algebraic format like e2/e4", &j);
+		return false;
+	}
+
+	promotion = 'q';
+	if (j.contains("promotion") && j["promotion"].is_string()) {
+		const std::string prom = j["promotion"].get<std::string>();
+		if (!prom.empty()) {
+			promotion = prom[0];
+		}
+	}
+
+	return true;
+}
+
 bool Session::isValidSquare(const std::string& square)
 {
 	if (square.size() != 2) {
@@ -336,8 +386,8 @@ bool Session::isValidSquare(const std::string& square)
 	return (square[0] >= 'a' && square[0] <= 'h') && (square[1] >= '1' && square[1] <= '8');
 }
 
-// disconnect也添加进post，防止重复断开
-void Session::disconnect() {
+void Session::disconnect()
+{
 	auto self = shared_from_this();
 
 	boost::asio::post(strand_,
@@ -355,7 +405,7 @@ void Session::disconnect() {
 
 			if (room_)
 			{
-				std::string playerId = player_ ? player_->id() : "";
+				const std::string playerId = player_ ? player_->id() : "";
 				room_->onPlayerDisconnected(self, playerId);
 				room_.reset();
 			}
@@ -364,6 +414,5 @@ void Session::disconnect() {
 			boost::system::error_code ec;
 			socket_.shutdown(tcp::socket::shutdown_both, ec);
 			socket_.close(ec);
-		}
-	);
+		});
 }

@@ -218,6 +218,7 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 		player->sendJson(
 			{
 				{"type", "error"},
+				{"code", "GAME_NOT_IN_PLAYING_STATE"},
 				{"message", "Game not in playing state"}
 			}
 		);
@@ -229,6 +230,7 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 		player->sendJson(
 			{
 				{"type", "error"},
+				{"code", "GAME_PAUSED_DISCONNECT"},
 				{"message", "Game paused due to disconnect"}
 			}
 		);
@@ -248,6 +250,7 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 			if (player->color() != turn_) {
 				player->sendJson({
 					{"type", "error"},
+					{"code", "NOT_YOUR_TURN"},
 					{"message", "Not your turn"}
 				});
 				return;
@@ -266,6 +269,7 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 				player->sendJson(
 					{
 						{"type", "error"},
+						{"code", "INVALID_MOVE"},
 						{"message", "Invalid move"}
 					}
 				);
@@ -481,6 +485,7 @@ void GameRoom::reconnect(const std::shared_ptr<Session>& session, const std::str
 			{
 				session->sendJson({
 					{"type", "error"},
+					{"code", "INVALID_PLAYER_ID"},
 					{"message", "reconnect failed: invalid player id"}
 				});
 				return;
@@ -491,6 +496,7 @@ void GameRoom::reconnect(const std::shared_ptr<Session>& session, const std::str
 				session->sendJson(
 					{
 						{"type", "error"},
+						{"code", "PLAYER_ALREADY_CONNECTED"},
 						{"message", "reconnect failed: player already connected"}
 					}
 				);

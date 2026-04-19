@@ -37,8 +37,21 @@ private:
 	void doRead();
 	void doWrite();
 	void handleMessage(const std::string& msg);
+	void dispatchMessage(const json& j);
+	void handleMatchMessage(const json& j);
+	void handleCreateRoomMessage(const json& j);
+	void handleJoinRoomMessage(const json& j);
+	void handleCancelMatchMessage(const json& j);
+	void handleCloseRoomMessage(const json& j);
+	void handleMoveMessage(const json& j);
+	void handleLessonMoveMessage(const json& j);
+	void handleResignMessage(const json& j);
+	void handleReconnectMessage(const json& j);
 	void disconnect();
 	void sendProtocolError(const std::string& code, const std::string& message, const json* request = nullptr);
+	bool tryGetStringField(const json& j, const char* field, std::string& out, const char* errorCode, const char* errorMessage);
+	int getClampedIntField(const json& j, const char* field, int defaultValue, int minValue, int maxValue, bool integerOnly = false) const;
+	bool tryGetMovePayload(const json& j, std::string& from, std::string& to, char& promotion);
 	static bool isValidSquare(const std::string& square);
 
 	std::atomic<bool> alive_{true};

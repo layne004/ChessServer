@@ -39,6 +39,7 @@ void RoomManager::handleReconnect(std::shared_ptr<Session> session, GameRoom::Ro
 		session->sendJson(
 			{
 				{"type", "error"},
+				{"code", "ALREADY_IN_ROOM"},
 				{"message", "reconnect failed: already in room"}
 			}
 		);
@@ -52,6 +53,7 @@ void RoomManager::handleReconnect(std::shared_ptr<Session> session, GameRoom::Ro
 		session->sendJson(
 			{
 				{"type", "error"},
+				{"code", "ROOM_NOT_FOUND"},
 				{"message", "reconnect failed: room not found"}
 			}
 		);
