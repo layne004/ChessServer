@@ -15,11 +15,11 @@ StockfishEngine::~StockfishEngine()
         worker_.join();
     
 #ifdef _WIN32
-	if (processHandle)
-		CloseHandle(processHandle);
+    if (processHandle)
+        CloseHandle(processHandle);
 #else
-	if (pid > 0)
-		kill(pid, SIGTERM);
+    if (pid > 0)
+        kill(pid, SIGTERM);
 #endif
 
 }
@@ -162,15 +162,15 @@ std::string StockfishEngine::readLine()
 
 std::string StockfishEngine::getBestMove(const std::string& fen, int depth)
 {
-	sendCommand("position fen " + fen);
+    sendCommand("position fen " + fen);
     sendCommand("go depth " + std::to_string(depth));
 
-	while (true)
-	{
-		auto line = readLine();
+    while (true)
+    {
+        auto line = readLine();
         
-		if (line.find("bestmove") != std::string::npos)
-		{
+        if (line.find("bestmove") != std::string::npos)
+        {
             std::string move = line.substr(9);
 
             auto pos = move.find(' ');
@@ -179,13 +179,13 @@ std::string StockfishEngine::getBestMove(const std::string& fen, int depth)
                 move = move.substr(0, pos);
 
             return move;
-		}
-	}
+        }
+    }
 }
 
 void StockfishEngine::asyncGetBestMove(const std::string& fen, int depth, Callback cb)
 {
-    // 开线程 -> 压入队列并唤醒worker;
+    // 寮�绾跨▼ -> 鍘嬪叆闃熷垪骞跺敜閱抴orker;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         tasks_.push(Task{ fen, depth, cb });

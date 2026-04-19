@@ -8,7 +8,7 @@ enum class GameResult {
 	Stalemate
 };
 
-// ÆåÅÌ¾ÖÃæ×´Ì¬¼ì²âÆ÷
+// æ£‹ç›˜å±€é¢çŠ¶æ€æ£€æµ‹å™¨
 class CheckEvaluator
 {
 public:

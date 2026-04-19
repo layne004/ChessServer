@@ -11,7 +11,7 @@ Server::Server(boost::asio::io_context& io, short port)
 }
 
 void Server::doAccept() {
-	// ÊÕµ½¿Í»§¶ËÁ¬½Ó -> ´´½¨session
+	// æ”¶åˆ°å®¢æˆ·ç«¯è¿žæŽ¥ -> åˆ›å»ºsession
 	acceptor_.async_accept(
 		[this](boost::system::error_code ec, tcp::socket socket) {
 

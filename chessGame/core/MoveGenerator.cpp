@@ -1,4 +1,4 @@
-﻿#include "MoveGenerator.h"
+#include "MoveGenerator.h"
 #include "MoveValidator.h"
 #include "CheckEvaluator.h"
 

@@ -2,7 +2,7 @@
 #include <string>
 #include <atomic>
 #include <sstream>
-// µİÔöID + Ê±¼ä´Á
+// é€’å¢ID + æ—¶é—´æˆ³
 class PlayerIdGenerator {
 public:
 	static std::string generate()

@@ -3,51 +3,51 @@
 
 bool MoveValidator::isValid(const Board& board, const Move& move, Color currentTurn)
 {
-    int fr = move.fromRow;
-    int fc = move.fromCol;
-    int tr = move.toRow;
-    int tc = move.toCol;
+	int fr = move.fromRow;
+	int fc = move.fromCol;
+	int tr = move.toRow;
+	int tc = move.toCol;
 
-    // 1.Æğµã¡¢ÖÕµãÊÇ·ñÔÚÆåÅÌÄÚ
-    if (!Board::isInsideBoard(fr, fc) || !Board::isInsideBoard(tr, tc))
-        return false;
+	// 1.èµ·ç‚¹ã€ç»ˆç‚¹æ˜¯å¦åœ¨æ£‹ç›˜å†…
+	if (!Board::isInsideBoard(fr, fc) || !Board::isInsideBoard(tr, tc))
+		return false;
 
-    // 2.Æğµã±ØĞëÓĞÆå×Ó
-    if (!board.cells[fr][fc])
-        return false;
+	// 2.èµ·ç‚¹å¿…é¡»æœ‰æ£‹å­
+	if (!board.cells[fr][fc])
+		return false;
 
-    const Piece& piece = *board.cells[fr][fc];
+	const Piece& piece = *board.cells[fr][fc];
 
-    // 3.±ØĞë×ßµ±Ç°»ØºÏµÄÆå×Ó
-    if (piece.color != currentTurn)
-        return false;
+	// 3.å¿…é¡»èµ°å½“å‰å›åˆçš„æ£‹å­
+	if (piece.color != currentTurn)
+		return false;
 
-    // 4.Ä¿±êÎ»ÖÃ²»ÄÜÊÇ¼º·½Æå×Ó
-    if (board.cells[tr][tc] && board.cells[tr][tc]->color == currentTurn)
-        return false;
+	// 4.ç›®æ ‡ä½ç½®ä¸èƒ½æ˜¯å·±æ–¹æ£‹å­
+	if (board.cells[tr][tc] && board.cells[tr][tc]->color == currentTurn)
+		return false;
 
-    // 5.¸ù¾İÆå×ÓÀàĞÍÅĞ¶Ï×ß·¨ÊÇ·ñºÏ·¨
-    switch (piece.type) {
-        case PieceType::King: 
-            return isValidKingMove(board, move, currentTurn);
+	// 5.æ ¹æ®æ£‹å­ç±»å‹åˆ¤æ–­èµ°æ³•æ˜¯å¦åˆæ³•
+	switch (piece.type) {
+		case PieceType::King: 
+			return isValidKingMove(board, move, currentTurn);
 
-        case PieceType::Queen: 
-            return isValidQueenMove(board, move);
+		case PieceType::Queen: 
+			return isValidQueenMove(board, move);
 
-        case PieceType::Rook: 
-            return isValidRookMove(board, move);
+		case PieceType::Rook: 
+			return isValidRookMove(board, move);
 
-        case PieceType::Bishop: 
-            return isValidBishopMove(board, move);
+		case PieceType::Bishop: 
+			return isValidBishopMove(board, move);
 
-        case PieceType::Knight: 
-            return isValidKnightMove(board, move);
+		case PieceType::Knight: 
+			return isValidKnightMove(board, move);
 
-        case PieceType::Pawn: 
-            return isValidPawnMove(board, move);
+		case PieceType::Pawn: 
+			return isValidPawnMove(board, move);
 
-        default:
-            return false;
-    }
+		default:
+			return false;
+	}
 
 }

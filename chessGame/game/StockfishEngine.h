@@ -28,10 +28,10 @@ public:
 
 	std::string readLine();
 
-	// ¾ÉÍ¬²½½Ó¿Ú
+	// æ—§åŒæ­¥æ¥å£
 	std::string getBestMove(const std::string& fen, int depth);
 
-	// ĞÂÒì²½½Ó¿Ú
+	// æ–°å¼‚æ­¥æ¥å£
 	void asyncGetBestMove(const std::string& fen, int depth, Callback cb);
 
 private:

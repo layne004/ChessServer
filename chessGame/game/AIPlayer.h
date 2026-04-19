@@ -23,16 +23,16 @@ public:
 	void send(const std::string& msg) override {}
 
 	void sendJson(const json&)override {
-		// AI 不需要发网络消息
+		// AI 涓嶉渶瑕佸彂缃戠粶娑堟伅
 	}
 
 	Color color() const override { return color_; }
 
 	bool isAI()const override { return true; }
 
-	// 同步
+	// 鍚屾
 	AIMove think(const std::string& fen);
-	// 异步
+	// 寮傛
 	void asyncThink(const std::string& fen, std::function<void(AIMove)> cb);
 
 private:
