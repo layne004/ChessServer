@@ -81,7 +81,7 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session, int initial, int in
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 
-	// 如果已经在匹配队列就拒绝
+	// 濡傛灉宸茬粡鍦ㄥ尮閰嶉槦鍒楀氨鎷掔粷
 	if (session->getRoom())
 		return;
 
@@ -90,7 +90,7 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session, int initial, int in
 	std::string key = makeBucketKey(initial, increment);
 	auto& queue = waitingBuckets_[key];
 
-	// 清理失效session
+	// 娓呯悊澶辨晥session
 	while (!queue.empty())
 	{
 		auto s = queue.front();
@@ -144,7 +144,7 @@ void RoomManager::createPveRoom(std::shared_ptr<Session> session, const std::str
 
 	Color aiColor = (humanColor == Color::White) ? Color::Black : Color::White;
 
-	//时间
+	//鏃堕棿
 	int initial = 300000;
 	int incre = 3000;
 
@@ -205,6 +205,13 @@ void RoomManager::createRoom(std::shared_ptr<Session> session, int initial, int 
 		{"color", "white"},
 		{"initial", initial},
 		{"increment", increment}
+	});
+
+	session->sendJson({
+		{"type", "room_waiting"},
+		{"room_id", roomId},
+		{"room_code", roomCode},
+		{"message", "waiting for opponent"}
 	});
 }
 
@@ -336,6 +343,35 @@ void RoomManager::cancelMatch(std::shared_ptr<Session> session)
 	});
 }
 
+void RoomManager::closeRoom(std::shared_ptr<Session> session)
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	if (!closeWaitingRoomLocked(session, false)) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "ROOM_NOT_CLOSABLE"},
+			{"message", "close room failed: session is not the waiting room host"}
+		});
+		return;
+	}
+
+	session->clearRoom();
+	session->setPlayer(nullptr);
+
+	session->sendJson({
+		{"type", "room_closed"}
+	});
+}
+
+void RoomManager::handleSessionClosed(const std::shared_ptr<Session>& session)
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	removeFromWaitingBucketsLocked(session);
+	closeWaitingRoomLocked(session, true);
+}
+
 void RoomManager::createLessonRoom()
 {
 
@@ -366,6 +402,32 @@ bool RoomManager::removeFromWaitingBucketsLocked(const std::shared_ptr<Session>&
 		q = std::move(rebuilt);
 	}
 	return removed;
+}
+
+bool RoomManager::closeWaitingRoomLocked(const std::shared_ptr<Session>& session, bool keepExpiredCode)
+{
+	auto room = session ? session->getRoom() : nullptr;
+	if (!room)
+		return false;
+
+	const auto roomId = room->id();
+	auto hostIt = roomHostPlayersById_.find(roomId);
+	if (hostIt == roomHostPlayersById_.end() || !room->isEmpty())
+		return false;
+
+	auto hostNet = std::dynamic_pointer_cast<NetworkPlayer>(hostIt->second);
+	if (!hostNet || hostNet->getSession() != session)
+		return false;
+
+	auto codeIt = roomCodesById_.find(roomId);
+	if (keepExpiredCode && codeIt != roomCodesById_.end()) {
+		expiredRoomCodes_[codeIt->second] = SteadyClock::now();
+	}
+
+	eraseRoomMappingsLocked(roomId);
+	waitingRoomCreatedAtById_.erase(roomId);
+	rooms_.erase(roomId);
+	return true;
 }
 
 std::string RoomManager::generateRoomCodeLocked() const
