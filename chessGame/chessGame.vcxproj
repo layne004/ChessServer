@@ -158,6 +158,7 @@
     <ClCompile Include="game\PlayerIdGenerator.cpp" />
     <ClCompile Include="game\RoomManager.cpp" />
     <ClCompile Include="game\StockfishEngine.cpp" />
+    <ClCompile Include="lesson\LessonController.cpp" />
     <ClCompile Include="net\Server.cpp" />
     <ClCompile Include="net\Session.cpp" />
     <ClCompile Include="rules\Perft.cpp" />

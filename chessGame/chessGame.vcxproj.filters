@@ -41,6 +41,9 @@
     <ClCompile Include="net\Session.cpp">
       <Filter>net</Filter>
     </ClCompile>
+    <ClCompile Include="lesson\LessonController.cpp">
+      <Filter>lesson</Filter>
+    </ClCompile>
     <ClCompile Include="game\AIPlayer.cpp">
       <Filter>game</Filter>
     </ClCompile>

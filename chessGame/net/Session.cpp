@@ -1,4 +1,5 @@
 #include "Session.h"
+#include "LessonController.h"
 #include "RoomManager.h"
 #include "Player.h"
 #include <algorithm>
@@ -190,6 +191,8 @@ void Session::dispatchMessage(const json& j)
 		{"match", &Session::handleMatchMessage},
 		{"create_room", &Session::handleCreateRoomMessage},
 		{"join_room", &Session::handleJoinRoomMessage},
+		{"start_lesson", &Session::handleStartLessonMessage},
+		{"next_lesson", &Session::handleNextLessonMessage},
 		{"cancel_match", &Session::handleCancelMatchMessage},
 		{"close_room", &Session::handleCloseRoomMessage},
 		{"move", &Session::handleMoveMessage},
@@ -249,6 +252,34 @@ void Session::handleJoinRoomMessage(const json& j)
 	}
 
 	room_manager_->joinRoom(shared_from_this(), roomCode);
+}
+
+void Session::handleStartLessonMessage(const json& j)
+{
+	std::string lessonId;
+	if (!tryGetStringField(j, "lesson_id", lessonId, "INVALID_LESSON_ID",
+		"field 'lesson_id' is required and must be string")) {
+		return;
+	}
+
+	room_manager_->createLessonRoom(shared_from_this(), lessonId);
+}
+
+void Session::handleNextLessonMessage(const json& j)
+{
+	std::string currentLessonId;
+	if (!tryGetStringField(j, "current_lesson_id", currentLessonId, "INVALID_LESSON_ID",
+		"field 'current_lesson_id' is required and must be string")) {
+		return;
+	}
+
+	const auto nextLessonId = LessonController::findNextLessonId(currentLessonId);
+	if (!nextLessonId.has_value()) {
+		sendProtocolError("LESSON_NOT_FOUND", "next lesson not found", &j);
+		return;
+	}
+
+	room_manager_->createLessonRoom(shared_from_this(), *nextLessonId);
 }
 
 void Session::handleCancelMatchMessage(const json&)

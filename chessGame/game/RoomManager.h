@@ -25,6 +25,7 @@ public:
 	void handleReconnect(std::shared_ptr<Session> s, GameRoom::RoomID roomId, const std::string& playerId);
 	void createRoom(std::shared_ptr<Session> session, int initial, int increment);
 	void joinRoom(std::shared_ptr<Session> session, const std::string& roomCode);
+	void createLessonRoom(std::shared_ptr<Session> session, const std::string& lessonId);
 	void cancelMatch(std::shared_ptr<Session> session);
 	void closeRoom(std::shared_ptr<Session> session);
 	void handleSessionClosed(const std::shared_ptr<Session>& session);
@@ -36,7 +37,6 @@ private:
 
 	void matchPvp(std::shared_ptr<Session> session, int initial, int increment);
 	void createPveRoom(std::shared_ptr<Session> session, const std::string& level, const std::string& color);
-	void createLessonRoom();
 	std::string makeBucketKey(int initial, int increment);
 	bool removeFromWaitingBucketsLocked(const std::shared_ptr<Session>& session);
 	std::string generateRoomCodeLocked() const;

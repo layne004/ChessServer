@@ -2,6 +2,7 @@
 #include "Session.h"
 #include "NetworkPlayer.h"
 #include "AIPlayer.h"
+#include "LessonController.h"
 #include <random>
 #include <cctype>
 
@@ -345,6 +346,51 @@ void RoomManager::cancelMatch(std::shared_ptr<Session> session)
 	});
 }
 
+void RoomManager::createLessonRoom(std::shared_ptr<Session> session, const std::string& lessonId)
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	if (session->getRoom()) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "ALREADY_IN_ROOM"},
+			{"message", "start lesson failed: already in room"}
+		});
+		return;
+	}
+
+	auto lesson = LessonController::findLesson(lessonId);
+	if (!lesson.has_value()) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "LESSON_NOT_FOUND"},
+			{"message", "start lesson failed: lesson not found"}
+		});
+		return;
+	}
+
+	removeFromWaitingBucketsLocked(session);
+
+	auto roomId = nextRoomId_++;
+	auto room = std::make_shared<GameRoom>(io_, roomId, GameRoom::Mode::Lesson);
+	rooms_[roomId] = room;
+
+	auto player = std::make_shared<NetworkPlayer>(session, lesson->turn);
+	session->setRoom(room);
+	session->setPlayer(player);
+
+	if (!room->startLesson(player, *lesson)) {
+		session->clearRoom();
+		session->setPlayer(nullptr);
+		rooms_.erase(roomId);
+		session->sendJson({
+			{"type", "error"},
+			{"code", "LESSON_INIT_FAILED"},
+			{"message", "start lesson failed: lesson position init failed"}
+		});
+	}
+}
+
 void RoomManager::closeRoom(std::shared_ptr<Session> session)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
@@ -372,11 +418,6 @@ void RoomManager::handleSessionClosed(const std::shared_ptr<Session>& session)
 
 	removeFromWaitingBucketsLocked(session);
 	closeWaitingRoomLocked(session, true);
-}
-
-void RoomManager::createLessonRoom()
-{
-
 }
 
 std::string RoomManager::makeBucketKey(int initial, int increment)

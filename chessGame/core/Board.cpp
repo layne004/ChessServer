@@ -4,19 +4,21 @@ using std::cout;
 using std::endl;
 #include <sstream>
 using std::ostringstream;
+#include <cctype>
+#include <vector>
 
 Board::Board() {
 	Board::init();
 }
 
 void Board::init() {
-	// Çå¿Õ
+	// æ¸…ç©º
 	for(int r = 0; r < 8; r++)
 		for (int c = 0; c < 8; c++) {
 			cells[r][c].reset();
 		}
 
-	// ºÚ·½°ÚÆå
+	// é»‘æ–¹æ‘†æ£‹
 	cells[0][0] = Piece{ PieceType::Rook, Color::Black };
 	cells[0][1] = Piece{ PieceType::Knight, Color::Black };
 	cells[0][2] = Piece{ PieceType::Bishop, Color::Black };
@@ -30,7 +32,7 @@ void Board::init() {
 		cells[1][i] = Piece{ PieceType::Pawn, Color::Black };
 	}
 
-	// °×·½°ÚÆå
+	// ç™½æ–¹æ‘†æ£‹
 	cells[7][0] = Piece{ PieceType::Rook, Color::White };
 	cells[7][1] = Piece{ PieceType::Knight, Color::White };
 	cells[7][2] = Piece{ PieceType::Bishop, Color::White };
@@ -53,6 +55,113 @@ void Board::init() {
 	enPassantCol = -1;
 }
 
+bool Board::loadFromFEN(const std::string& fen, Color& turn, int& halfmove, int& fullmove)
+{
+	std::istringstream iss(fen);
+	std::string placement;
+	std::string activeColor;
+	std::string castling;
+	std::string enPassant;
+
+	if (!(iss >> placement >> activeColor >> castling >> enPassant >> halfmove >> fullmove)) {
+		return false;
+	}
+
+	for (int r = 0; r < 8; ++r) {
+		for (int c = 0; c < 8; ++c) {
+			cells[r][c].reset();
+		}
+	}
+
+	int row = 0;
+	int col = 0;
+	for (char ch : placement)
+	{
+		if (ch == '/') {
+			if (col != 8) {
+				return false;
+			}
+			++row;
+			col = 0;
+			continue;
+		}
+
+		if (std::isdigit(static_cast<unsigned char>(ch))) {
+			col += ch - '0';
+			if (col > 8) {
+				return false;
+			}
+			continue;
+		}
+
+		if (row >= 8 || col >= 8) {
+			return false;
+		}
+
+		Color color = std::isupper(static_cast<unsigned char>(ch)) ? Color::White : Color::Black;
+		char lower = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+
+		PieceType type;
+		switch (lower)
+		{
+		case 'k': type = PieceType::King; break;
+		case 'q': type = PieceType::Queen; break;
+		case 'r': type = PieceType::Rook; break;
+		case 'b': type = PieceType::Bishop; break;
+		case 'n': type = PieceType::Knight; break;
+		case 'p': type = PieceType::Pawn; break;
+		default:
+			return false;
+		}
+
+		cells[row][col] = Piece{ type, color };
+		++col;
+	}
+
+	if (row != 7 || col != 8) {
+		return false;
+	}
+
+	if (activeColor == "w") {
+		turn = Color::White;
+	}
+	else if (activeColor == "b") {
+		turn = Color::Black;
+	}
+	else {
+		return false;
+	}
+
+	whiteKingSideCastle = castling.find('K') != std::string::npos;
+	whiteQueenSideCastle = castling.find('Q') != std::string::npos;
+	blackKingSideCastle = castling.find('k') != std::string::npos;
+	blackQueenSideCastle = castling.find('q') != std::string::npos;
+
+	if (enPassant == "-") {
+		enPassantRow = -1;
+		enPassantCol = -1;
+	}
+	else {
+		if (enPassant.size() != 2) {
+			return false;
+		}
+		enPassantCol = enPassant[0] - 'a';
+		enPassantRow = '8' - enPassant[1];
+		if (!isInsideBoard(enPassantRow, enPassantCol)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool Board::loadFromFEN(const std::string& fen, Color& turn)
+{
+	int halfmove = 0;
+	int fullmove = 1;
+	return loadFromFEN(fen, turn, halfmove, fullmove);
+}
+
 void Board::applyMove(const Move& move)
 {
 
@@ -61,15 +170,15 @@ void Board::applyMove(const Move& move)
 	if (!piece)
 		return;
 
-	// ±£´æ¾É enPassant
+	// ä¿å­˜æ—§ enPassant
 	int oldEnPassantRow = enPassantRow;
 	int oldEnPassantCol = enPassantCol;
 
-	// Çå¿Õ enPassant
+	// æ¸…ç©º enPassant
 	enPassantRow = -1;
 	enPassantCol = -1;
 
-	// ´¦ÀíRook±»³Ô
+	// å¤„ç†Rookè¢«åƒ
 	auto captured = cells[move.toRow][move.toCol];
 
 	if (captured && captured->type == PieceType::Rook)
@@ -87,7 +196,7 @@ void Board::applyMove(const Move& move)
 			blackKingSideCastle = false;
 	}
 
-	// ´¦Àí¹ýÂ·±ø±»³Ô
+	// å¤„ç†è¿‡è·¯å…µè¢«åƒ
 	if (piece->type == PieceType::Pawn)
 	{
 		if (move.toRow == oldEnPassantRow && move.toCol == oldEnPassantCol)
@@ -97,7 +206,7 @@ void Board::applyMove(const Move& move)
 		}
 	}
 
-	// Íõ³µÒ×Î»
+	// çŽ‹è½¦æ˜“ä½
 	if (piece->type == PieceType::King)
 	{
 		int diff = move.toCol - move.fromCol;
@@ -117,7 +226,7 @@ void Board::applyMove(const Move& move)
 		
 	}
 
-	// ÍõÒÆ¶¯
+	// çŽ‹ç§»åŠ¨
 	if (piece->type == PieceType::King)
 	{
 		if (piece->color == Color::White)
@@ -132,7 +241,7 @@ void Board::applyMove(const Move& move)
 		}
 	}
 
-	// ³µÒÆ¶¯
+	// è½¦ç§»åŠ¨
 	if (piece->type == PieceType::Rook)
 	{
 		if (move.fromRow == 7 && move.fromCol == 0)
@@ -148,7 +257,7 @@ void Board::applyMove(const Move& move)
 			blackKingSideCastle = false;
 	}
 
-	// ±ø×ßÁ½¸ñ
+	// å…µèµ°ä¸¤æ ¼
 	if (piece && piece->type == PieceType::Pawn)
 	{
 		int diff = move.toRow - move.fromRow;
@@ -164,7 +273,7 @@ void Board::applyMove(const Move& move)
 	cells[move.toRow][move.toCol] = piece;
 	cells[move.fromRow][move.fromCol].reset();
 
-	// ±øÉý±ä
+	// å…µå‡å˜
 	if (piece->type == PieceType::Pawn)
 	{
 		if (piece->color == Color::White && move.toRow == 0)
@@ -244,7 +353,7 @@ std::string Board::toFEN(Color turn, int halfmove, int fullmove)const
 {
 	std::ostringstream fen;
 
-	// ÆåÅÌ²¿·Ö
+	// æ£‹ç›˜éƒ¨åˆ†
 	for (int r = 0; r < 8; r++)
 	{
 		int emptyCount = 0;
@@ -284,11 +393,11 @@ std::string Board::toFEN(Color turn, int halfmove, int fullmove)const
 			fen << "/";
 	}
 
-	// µ±Ç°×ßÆå·½
+	// å½“å‰èµ°æ£‹æ–¹
 	fen << " ";
 	fen << (turn == Color::White ? "w" : "b");
 
-	// Íõ³µÒ×Î»
+	// çŽ‹è½¦æ˜“ä½
 	fen << " ";
 
 	std::string castling = "";
@@ -303,7 +412,7 @@ std::string Board::toFEN(Color turn, int halfmove, int fullmove)const
 
 	fen << castling;
 
-	// ³Ô¹ýÂ·±ø
+	// åƒè¿‡è·¯å…µ
 	fen << " ";
 
 	if (enPassantRow == -1)
@@ -317,10 +426,10 @@ std::string Board::toFEN(Color turn, int halfmove, int fullmove)const
 		fen << file << rank;
 	}
 
-	// °ë»ØºÏ¼ÆÊý
+	// åŠå›žåˆè®¡æ•°
 	fen << " "<<halfmove;
 
-	// È«»ØºÏ¼ÆÊý
+	// å…¨å›žåˆè®¡æ•°
 	fen << " "<<fullmove;
 
 	return fen.str();
