@@ -32,38 +32,37 @@ bool CheckEvaluator::isKingInCheck(const Board& board, Color kingColor)
 			switch (p.type) {
 				// 此处不调用isValidKingMove的原因是防止死循环
 				// 因为在 isValidKingMove 中调用了本函数 isKingInCheck
-				case PieceType::King:
-					if (abs(attackMove.fromRow - attackMove.toRow) <= 1 &&
-						abs(attackMove.fromCol - attackMove.toCol) <= 1)
-						return true;
-					break;
+			case PieceType::King:
+				if (abs(attackMove.fromRow - attackMove.toRow) <= 1 &&
+					abs(attackMove.fromCol - attackMove.toCol) <= 1)
+					return true;
+				break;
 
-				case PieceType::Queen:
-					if (isValidQueenMove(board, attackMove))
-						return true;
-					break;
+			case PieceType::Queen:
+				if (isValidQueenMove(board, attackMove))
+					return true;
+				break;
 
-				case PieceType::Rook:
-					if (isValidRookMove(board, attackMove))
-						return true;
-					break;
+			case PieceType::Rook:
+				if (isValidRookMove(board, attackMove))
+					return true;
+				break;
 
-				case PieceType::Bishop:
-					if (isValidBishopMove(board, attackMove))
-						return true;
-					break;
+			case PieceType::Bishop:
+				if (isValidBishopMove(board, attackMove))
+					return true;
+				break;
 
-				case PieceType::Knight:
-					if (isValidKnightMove(board, attackMove))
-						return true;
-					break;
+			case PieceType::Knight:
+				if (isValidKnightMove(board, attackMove))
+					return true;
+				break;
 
 				// 兵的攻击判断需要单独写，因为兵直着走，斜着吃子
-				case PieceType::Pawn:
-					if (isPawnAttacking(board, attackMove, enemyColor))
-						return true;
-					break;
-
+			case PieceType::Pawn:
+				if (isPawnAttacking(board, attackMove, enemyColor))
+					return true;
+				break;
 			}
 		}
 	}

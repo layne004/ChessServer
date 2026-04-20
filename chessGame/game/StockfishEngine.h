@@ -38,7 +38,7 @@ private:
 	void workerLoop();
 
 private:
-	
+
 #ifdef _WIN32
 	HANDLE processHandle = NULL;
 	HANDLE writePipe = NULL;
@@ -62,4 +62,3 @@ private:
 	std::condition_variable cv_;
 	std::queue<Task> tasks_;
 };
-

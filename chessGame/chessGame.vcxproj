@@ -124,6 +124,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>D:\Download\chess\ChessServer\chessGame\lesson;D:\Download\chess\ChessServer\chessGame\utils;D:\Code\chess\chessGame\chessGame\rules;D:\Code\chess\chessGame\chessGame\net;D:\Code\chess\chessGame\chessGame\game;D:\Code\chess\chessGame\chessGame\core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

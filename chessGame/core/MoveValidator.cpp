@@ -28,26 +28,25 @@ bool MoveValidator::isValid(const Board& board, const Move& move, Color currentT
 
 	// 5.根据棋子类型判断走法是否合法
 	switch (piece.type) {
-		case PieceType::King: 
-			return isValidKingMove(board, move, currentTurn);
+	case PieceType::King:
+		return isValidKingMove(board, move, currentTurn);
 
-		case PieceType::Queen: 
-			return isValidQueenMove(board, move);
+	case PieceType::Queen:
+		return isValidQueenMove(board, move);
 
-		case PieceType::Rook: 
-			return isValidRookMove(board, move);
+	case PieceType::Rook:
+		return isValidRookMove(board, move);
 
-		case PieceType::Bishop: 
-			return isValidBishopMove(board, move);
+	case PieceType::Bishop:
+		return isValidBishopMove(board, move);
 
-		case PieceType::Knight: 
-			return isValidKnightMove(board, move);
+	case PieceType::Knight:
+		return isValidKnightMove(board, move);
 
-		case PieceType::Pawn: 
-			return isValidPawnMove(board, move);
+	case PieceType::Pawn:
+		return isValidPawnMove(board, move);
 
-		default:
-			return false;
+	default:
+		return false;
 	}
-
 }

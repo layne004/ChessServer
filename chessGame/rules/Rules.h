@@ -6,5 +6,3 @@ bool isValidRookMove(const Board& board, const Move& m);
 bool isValidBishopMove(const Board& board, const Move& m);
 bool isValidKnightMove(const Board& board, const Move& m);
 bool isValidPawnMove(const Board& board, const Move& m);
-
-

@@ -30,7 +30,7 @@ namespace
 GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId, Mode mode,
 	int initialTimeMs,
 	int incrementMs)
-	:strand_(boost::asio::make_strand(io)), clockTimer_(io), roomId_(roomId),mode_(mode),
+	:strand_(boost::asio::make_strand(io)), clockTimer_(io), roomId_(roomId), mode_(mode),
 	initialTimeMs_(initialTimeMs), incrementMs_(incrementMs)
 {
 	// 初始化
@@ -165,13 +165,11 @@ void GameRoom::resumeClock()
 
 void GameRoom::start(std::shared_ptr<Player> white, std::shared_ptr<Player> black)
 {
-	
 	auto self = shared_from_this();
 
 	boost::asio::post(strand_,
-		[this, self, white, black]() 
+		[this, self, white, black]()
 		{
-
 			state_ = GameState::Playing;
 			startClockTimer();
 
@@ -241,7 +239,7 @@ bool GameRoom::startLesson(std::shared_ptr<Player> player, const LessonStep& ste
 		{"lesson_id", step.lessonId},
 		{"player_id", player->id()},
 		{"room_id", id()}
-	});
+		});
 
 	broadcastLessonState();
 	return true;
@@ -256,7 +254,7 @@ void GameRoom::endGame(const std::string& result, const std::string& reason)
 		{"type", "game_over"},
 		{"result", result},
 		{"reason", reason }
-	});
+		});
 
 	if (white_) {
 		if (auto netp = std::dynamic_pointer_cast<NetworkPlayer>(white_)) {
@@ -319,7 +317,7 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 					{"type", "error"},
 					{"code", "NOT_YOUR_TURN"},
 					{"message", "Not your turn"}
-				});
+					});
 				return;
 			}
 
@@ -345,7 +343,7 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 
 			//判断是否吃子或兵移动
 			auto piece = board_.cells[move.fromRow][move.fromCol];
-			bool isCapture = board_.cells[move.toRow][move.toCol].has_value()||
+			bool isCapture = board_.cells[move.toRow][move.toCol].has_value() ||
 				(piece && piece->type == PieceType::Pawn &&
 					move.toRow == board_.enPassantRow &&
 					move.toCol == board_.enPassantCol);
@@ -361,13 +359,12 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 					isPromotion = true;
 				}
 			}
-			
 
 			board_.applyMove(move);
 
 			// 更新 halfmove 和 fullmove
 			bool isPawnMove = false;
-			
+
 			if (piece && piece->type == PieceType::Pawn)
 				isPawnMove = true;
 
@@ -400,7 +397,6 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 			GameResult result =
 				CheckEvaluator::evaluate(board_, turn_);
 
-			
 			if (result == GameResult::Checkmate) {
 				std::string winner = (turn_ == Color::White)
 					? "black_win"
@@ -420,12 +416,10 @@ void GameRoom::handleMove(std::shared_ptr<Player> player, const std::string& fro
 			else {
 				broadcastMove(from, to);
 			}
-			
 
 			maybeAIMove();
 		}
 	);
-
 }
 
 void GameRoom::maybeAIMove()
@@ -441,7 +435,7 @@ void GameRoom::maybeAIMove()
 
 	ai->asyncThink(fen, [weak = weak_from_this(), current](AIMove move)
 		{
-			if(auto self = weak.lock())
+			if (auto self = weak.lock())
 			{
 				self->handleMove(current, move.from, move.to, move.promotion);
 			}
@@ -455,7 +449,7 @@ void GameRoom::handleLessonMove(std::shared_ptr<Player> player, const std::strin
 			{"type", "error"},
 			{"code", "LESSON_NOT_ACTIVE"},
 			{"message", "lesson is not active"}
-		});
+			});
 		return;
 	}
 
@@ -466,7 +460,7 @@ void GameRoom::handleLessonMove(std::shared_ptr<Player> player, const std::strin
 			{"type", "lesson_wrong"},
 			{"lesson_id", step.lessonId},
 			{"hint", "move the highlighted lesson piece"}
-		});
+			});
 		return;
 	}
 
@@ -476,7 +470,7 @@ void GameRoom::handleLessonMove(std::shared_ptr<Player> player, const std::strin
 			{"type", "error"},
 			{"code", "INVALID_MOVE"},
 			{"message", "Invalid move"}
-		});
+			});
 		return;
 	}
 
@@ -493,7 +487,7 @@ void GameRoom::handleLessonMove(std::shared_ptr<Player> player, const std::strin
 			{"type", "error"},
 			{"code", "INVALID_MOVE"},
 			{"message", "Invalid move"}
-		});
+			});
 		return;
 	}
 
@@ -509,7 +503,7 @@ void GameRoom::handleLessonMove(std::shared_ptr<Player> player, const std::strin
 			{"lesson_id", step.lessonId},
 			{"square", to},
 			{"remaining_target_count", remainingLessonTargets_.size()}
-		});
+			});
 	}
 
 	if (remainingLessonTargets_.empty()) {
@@ -518,27 +512,25 @@ void GameRoom::handleLessonMove(std::shared_ptr<Player> player, const std::strin
 			{"lesson_id", step.lessonId},
 			{"move_count", lessonMoveCount_},
 			{"message", step.successMessage.empty() ? "lesson complete" : step.successMessage}
-		});
+			});
 		player->sendJson({
 			{"type", "lesson_complete"},
 			{"lesson_id", step.lessonId},
 			{"move_count", lessonMoveCount_}
-		});
+			});
 		endGame("lesson_complete", "done");
 		return;
 	}
 
 	broadcastLessonState();
-
 }
 
 void GameRoom::handleResign(const std::shared_ptr<Player> player)
 {
-	
 	auto self = shared_from_this();
 
-	boost::asio::post(strand_, 
-		[this, self, player]() 
+	boost::asio::post(strand_,
+		[this, self, player]()
 		{
 			Color color = player->color();
 
@@ -548,7 +540,6 @@ void GameRoom::handleResign(const std::shared_ptr<Player> player)
 			std::string reason = "resign";
 
 			endGame(winner, reason);
-
 		}
 	);
 }
@@ -570,11 +561,11 @@ void GameRoom::onPlayerDisconnected(const std::shared_ptr<Session>& session, con
 			player->setConnected(false);
 			pauseClock();
 
-			std::cout << "Session disconnect: Player "<<player->id()<<" disconnected in room " << roomId_ << std::endl;
+			std::cout << "Session disconnect: Player " << player->id() << " disconnected in room " << roomId_ << std::endl;
 
 			// 防止出现网络抖动而启动多个Timer
 			player->cancelDisconnectTimer();
-			player->startDisconnectTimer(strand_.get_inner_executor(), 
+			player->startDisconnectTimer(strand_.get_inner_executor(),
 				[this, self, player]()
 				{
 					if (state_ == GameState::GameOver)
@@ -597,7 +588,7 @@ void GameRoom::reconnect(const std::shared_ptr<Session>& session, const std::str
 {
 	auto self = shared_from_this();
 
-	boost::asio::post(strand_, 
+	boost::asio::post(strand_,
 		[this, self, session, playerId]()
 		{
 			auto player = findPlayerById(playerId);
@@ -608,7 +599,7 @@ void GameRoom::reconnect(const std::shared_ptr<Session>& session, const std::str
 					{"type", "error"},
 					{"code", "INVALID_PLAYER_ID"},
 					{"message", "reconnect failed: invalid player id"}
-				});
+					});
 				return;
 			}
 
@@ -647,10 +638,8 @@ void GameRoom::reconnect(const std::shared_ptr<Session>& session, const std::str
 				});
 
 			broadcastState();
-
 		}
 	);
-
 }
 
 std::shared_ptr<Player> GameRoom::findPlayerById(const std::string& id)
@@ -665,7 +654,7 @@ std::shared_ptr<Player> GameRoom::findPlayerById(const std::string& id)
 		return black_;
 	}
 
-	for(auto&s:spectators_)
+	for (auto& s : spectators_)
 		if (s && s->id() == id)
 		{
 			return s;
@@ -674,8 +663,8 @@ std::shared_ptr<Player> GameRoom::findPlayerById(const std::string& id)
 	return nullptr;
 }
 
-bool GameRoom::isFull() const 
-{ 
+bool GameRoom::isFull() const
+{
 	return white_ && black_;
 }
 
@@ -689,7 +678,7 @@ void GameRoom::resetGame()
 	auto self = shared_from_this();
 
 	boost::asio::post(strand_,
-		[this, self]() 
+		[this, self]()
 		{
 			board_.init();
 			turn_ = Color::White;
@@ -697,7 +686,6 @@ void GameRoom::resetGame()
 			broadcast("RESET");
 		}
 	);
-
 }
 
 void GameRoom::broadcast(const std::string& msg)
@@ -708,7 +696,6 @@ void GameRoom::broadcast(const std::string& msg)
 	if (black_) {
 		black_->send(msg);
 	}
-
 }
 
 void GameRoom::broadcastJson(const json& j)
@@ -807,4 +794,3 @@ void GameRoom::broadcastLessonState()
 		white_->sendJson(j);
 	}
 }
-

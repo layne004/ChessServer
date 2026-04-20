@@ -15,7 +15,6 @@ AIPlayer::AIPlayer(Color color, const std::string& level)
 #else
 	engine_.start("/usr/games/stockfish");
 #endif
-	
 }
 
 AIMove AIPlayer::think(const std::string& fen)
@@ -25,7 +24,7 @@ AIMove AIPlayer::think(const std::string& fen)
 	AIMove result;
 
 	result.from = move.substr(0, 2);
-	result.to   = move.substr(2, 2);
+	result.to = move.substr(2, 2);
 
 	if (move.size() == 5)
 	{
@@ -41,7 +40,7 @@ AIMove AIPlayer::think(const std::string& fen)
 
 void AIPlayer::asyncThink(const std::string& fen, std::function<void(AIMove)> cb)
 {
-	engine_.asyncGetBestMove(fen, depth_, 
+	engine_.asyncGetBestMove(fen, depth_,
 		[cb](const std::string& moveStr) {
 			AIMove result;
 
@@ -51,5 +50,5 @@ void AIPlayer::asyncThink(const std::string& fen, std::function<void(AIMove)> cb
 			result.promotion = moveStr.size() == 5 ? moveStr[4] : 'q';
 
 			cb(result);
-	});
+		});
 }

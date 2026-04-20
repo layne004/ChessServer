@@ -14,7 +14,7 @@ void NetworkPlayer::send(const std::string& msg)
 
 void NetworkPlayer::sendJson(const json& j)
 {
-	if(auto session = session_.lock())
+	if (auto session = session_.lock())
 		session->sendJson(j);
 }
 
@@ -23,13 +23,12 @@ Color NetworkPlayer::color()const
 	return color_;
 }
 
-bool NetworkPlayer::isAI()const 
+bool NetworkPlayer::isAI()const
 {
 	return false;
 }
 
 std::shared_ptr<Session> NetworkPlayer::getSession() const
 {
-
 	return session_.lock();
 }

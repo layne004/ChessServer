@@ -112,7 +112,7 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session, int initial, int in
 			{"mode", "pvp"},
 			{"initial", initial},
 			{"increment", increment}
-		});
+			});
 	}
 	else {
 		auto opponent = queue.front();
@@ -180,7 +180,7 @@ void RoomManager::createRoom(std::shared_ptr<Session> session, int initial, int 
 			{"type", "error"},
 			{"code", "ALREADY_IN_ROOM"},
 			{"message", "create room failed: already in room"}
-		});
+			});
 		return;
 	}
 
@@ -208,14 +208,14 @@ void RoomManager::createRoom(std::shared_ptr<Session> session, int initial, int 
 		{"color", "white"},
 		{"initial", initial},
 		{"increment", increment}
-	});
+		});
 
 	session->sendJson({
 		{"type", "room_waiting"},
 		{"room_id", roomId},
 		{"room_code", roomCode},
 		{"message", "waiting for opponent"}
-	});
+		});
 }
 
 void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& roomCode)
@@ -234,7 +234,7 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 			{"type", "error"},
 			{"code", "ALREADY_IN_ROOM"},
 			{"message", "join room failed: already in room"}
-		});
+			});
 		return;
 	}
 
@@ -247,14 +247,14 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 				{"type", "error"},
 				{"code", "ROOM_EXPIRED"},
 				{"message", "join room failed: room expired"}
-			});
+				});
 			return;
 		}
 		session->sendJson({
 			{"type", "error"},
 			{"code", "ROOM_NOT_FOUND"},
 			{"message", "join room failed: room not found"}
-		});
+			});
 		return;
 	}
 
@@ -265,7 +265,7 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 			{"type", "error"},
 			{"code", "ROOM_NOT_FOUND"},
 			{"message", "join room failed: room not found"}
-		});
+			});
 		return;
 	}
 
@@ -281,7 +281,7 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 				{"type", "error"},
 				{"code", "ROOM_EXPIRED"},
 				{"message", "join room failed: room expired"}
-			});
+				});
 			return;
 		}
 	}
@@ -291,7 +291,7 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 			{"type", "error"},
 			{"code", "ROOM_FULL"},
 			{"message", "join room failed: room is full"}
-		});
+			});
 		return;
 	}
 
@@ -301,7 +301,7 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 			{"type", "error"},
 			{"code", "ROOM_HOST_OFFLINE"},
 			{"message", "join room failed: room host unavailable"}
-		});
+			});
 		return;
 	}
 
@@ -315,7 +315,7 @@ void RoomManager::joinRoom(std::shared_ptr<Session> session, const std::string& 
 			{"type", "error"},
 			{"code", "ROOM_HOST_OFFLINE"},
 			{"message", "join room failed: room host disconnected"}
-		});
+			});
 		return;
 	}
 
@@ -335,7 +335,7 @@ void RoomManager::cancelMatch(std::shared_ptr<Session> session)
 	if (removeFromWaitingBucketsLocked(session)) {
 		session->sendJson({
 			{"type", "match_cancelled"}
-		});
+			});
 		return;
 	}
 
@@ -343,7 +343,7 @@ void RoomManager::cancelMatch(std::shared_ptr<Session> session)
 		{"type", "error"},
 		{"code", "NOT_IN_MATCH_QUEUE"},
 		{"message", "cancel match failed: session not in queue"}
-	});
+		});
 }
 
 void RoomManager::createLessonRoom(std::shared_ptr<Session> session, const std::string& lessonId)
@@ -355,7 +355,7 @@ void RoomManager::createLessonRoom(std::shared_ptr<Session> session, const std::
 			{"type", "error"},
 			{"code", "ALREADY_IN_ROOM"},
 			{"message", "start lesson failed: already in room"}
-		});
+			});
 		return;
 	}
 
@@ -365,7 +365,7 @@ void RoomManager::createLessonRoom(std::shared_ptr<Session> session, const std::
 			{"type", "error"},
 			{"code", "LESSON_NOT_FOUND"},
 			{"message", "start lesson failed: lesson not found"}
-		});
+			});
 		return;
 	}
 
@@ -387,7 +387,7 @@ void RoomManager::createLessonRoom(std::shared_ptr<Session> session, const std::
 			{"type", "error"},
 			{"code", "LESSON_INIT_FAILED"},
 			{"message", "start lesson failed: lesson position init failed"}
-		});
+			});
 	}
 }
 
@@ -400,7 +400,7 @@ void RoomManager::closeRoom(std::shared_ptr<Session> session)
 			{"type", "error"},
 			{"code", "ROOM_NOT_CLOSABLE"},
 			{"message", "close room failed: session is not the waiting room host"}
-		});
+			});
 		return;
 	}
 
@@ -409,7 +409,7 @@ void RoomManager::closeRoom(std::shared_ptr<Session> session)
 
 	session->sendJson({
 		{"type", "room_closed"}
-	});
+		});
 }
 
 void RoomManager::handleSessionClosed(const std::shared_ptr<Session>& session)

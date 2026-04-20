@@ -13,7 +13,7 @@ Board::Board() {
 
 void Board::init() {
 	// 清空
-	for(int r = 0; r < 8; r++)
+	for (int r = 0; r < 8; r++)
 		for (int c = 0; c < 8; c++) {
 			cells[r][c].reset();
 		}
@@ -164,7 +164,6 @@ bool Board::loadFromFEN(const std::string& fen, Color& turn)
 
 void Board::applyMove(const Move& move)
 {
-
 	auto piece = cells[move.fromRow][move.fromCol];
 
 	if (!piece)
@@ -223,7 +222,6 @@ void Board::applyMove(const Move& move)
 				cells[move.fromRow][0].reset();
 			}
 		}
-		
 	}
 
 	// 王移动
@@ -269,7 +267,6 @@ void Board::applyMove(const Move& move)
 		}
 	}
 
-
 	cells[move.toRow][move.toCol] = piece;
 	cells[move.fromRow][move.fromCol].reset();
 
@@ -286,11 +283,9 @@ void Board::applyMove(const Move& move)
 			cells[move.toRow][move.toCol] = Piece{ move.promotion, Color::Black };
 		}
 	}
-
 }
 
-void Board::print() const{
-
+void Board::print() const {
 	for (int r = 0; r < 8; r++) {
 		cout << 8 - r << " ";
 		for (int c = 0; c < 8; c++) {
@@ -349,7 +344,7 @@ std::string Board::toString() const
 	return oss.str();
 }
 
-std::string Board::toFEN(Color turn, int halfmove, int fullmove)const 
+std::string Board::toFEN(Color turn, int halfmove, int fullmove)const
 {
 	std::ostringstream fen;
 
@@ -371,12 +366,12 @@ std::string Board::toFEN(Color turn, int halfmove, int fullmove)const
 
 				char ch;
 				switch (cells[r][c]->type) {
-					case PieceType::King: ch = 'K'; break;
-					case PieceType::Queen: ch = 'Q'; break;
-					case PieceType::Rook: ch = 'R'; break;
-					case PieceType::Bishop: ch = 'B'; break;
-					case PieceType::Knight: ch = 'N'; break;
-					case PieceType::Pawn: ch = 'P'; break;
+				case PieceType::King: ch = 'K'; break;
+				case PieceType::Queen: ch = 'Q'; break;
+				case PieceType::Rook: ch = 'R'; break;
+				case PieceType::Bishop: ch = 'B'; break;
+				case PieceType::Knight: ch = 'N'; break;
+				case PieceType::Pawn: ch = 'P'; break;
 				}
 
 				if (cells[r][c]->color == Color::Black)
@@ -427,10 +422,10 @@ std::string Board::toFEN(Color turn, int halfmove, int fullmove)const
 	}
 
 	// 半回合计数
-	fen << " "<<halfmove;
+	fen << " " << halfmove;
 
 	// 全回合计数
-	fen << " "<<fullmove;
+	fen << " " << fullmove;
 
 	return fen.str();
 }

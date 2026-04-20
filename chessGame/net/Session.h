@@ -12,7 +12,7 @@ class RoomManager;
 
 class Player;
 
-class Session:public std::enable_shared_from_this<Session>
+class Session :public std::enable_shared_from_this<Session>
 {
 public:
 	static constexpr std::size_t kMaxMessageBytes = 64 * 1024; // 64KB single-line JSON frame
@@ -56,7 +56,7 @@ private:
 	bool tryGetMovePayload(const json& j, std::string& from, std::string& to, char& promotion);
 	static bool isValidSquare(const std::string& square);
 
-	std::atomic<bool> alive_{true};
+	std::atomic<bool> alive_{ true };
 	tcp::socket socket_;
 	boost::asio::strand<boost::asio::any_io_executor> strand_;
 	boost::asio::streambuf buffer_;
@@ -67,4 +67,3 @@ private:
 	std::shared_ptr<RoomManager> room_manager_;
 	bool disconnected_ = false;
 };
-

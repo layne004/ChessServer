@@ -26,7 +26,7 @@ struct ClockState
 	std::chrono::steady_clock::time_point lastStart;
 };
 
-class GameRoom:public std::enable_shared_from_this<GameRoom>
+class GameRoom :public std::enable_shared_from_this<GameRoom>
 {
 public:
 	enum class Mode {
@@ -47,9 +47,9 @@ public:
 
 	// 终止游戏
 	void endGame(const std::string& result, const std::string& reason);
-	
+
 	// 处理玩家走棋
-	void handleMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to, char promotion='q');
+	void handleMove(std::shared_ptr<Player> player, const std::string& from, const std::string& to, char promotion = 'q');
 
 	// 处理AI玩家走棋
 	void maybeAIMove();
@@ -89,7 +89,7 @@ private:
 	void broadcastState();
 	void broadcastLessonState();
 	//void broadcastGameOver(const std::string& result, const std::string& reason);
-	
+
 	// 在走棋后更新时钟
 	void updateClockBeforeMove();
 
@@ -134,4 +134,3 @@ private:
 	std::vector<std::string> remainingLessonTargets_;
 	int lessonMoveCount_ = 0;
 };
-

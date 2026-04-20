@@ -17,4 +17,3 @@ private:
 	tcp::acceptor acceptor_;
 	std::shared_ptr<RoomManager> room_manager_;
 };
-

@@ -5,7 +5,6 @@
 #include "Move.h"
 #include <vector>
 
-
 class MoveGenerator {
 public:
 	// 返回某个棋子的合法走法

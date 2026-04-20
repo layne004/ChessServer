@@ -30,7 +30,6 @@
 //	return 0;
 //}
 
-
 #include <boost/asio.hpp>
 #include "Server.h"
 #include <vector>
@@ -57,9 +56,9 @@ int main()
 	{
 		threads.emplace_back([&io]() {
 			io.run();
-		});
+			});
 	}
-	
+
 	for (auto& t : threads)
 	{
 		t.join();
