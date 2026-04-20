@@ -16,7 +16,6 @@ class RoomManager
 public:
 	RoomManager(boost::asio::io_context& io);
 
-	// 处理匹配
 	void handleMatch(std::shared_ptr<Session> session, const std::string& mode,
 		const std::string& level, const std::string& color, int initial, int increment);
 
@@ -26,6 +25,9 @@ public:
 	void createRoom(std::shared_ptr<Session> session, int initial, int increment);
 	void joinRoom(std::shared_ptr<Session> session, const std::string& roomCode);
 	void createLessonRoom(std::shared_ptr<Session> session, const std::string& lessonId);
+	void listLessons(std::shared_ptr<Session> session);
+	void getLessonState(std::shared_ptr<Session> session);
+	void exitLesson(std::shared_ptr<Session> session);
 	void cancelMatch(std::shared_ptr<Session> session);
 	void closeRoom(std::shared_ptr<Session> session);
 	void handleSessionClosed(const std::shared_ptr<Session>& session);

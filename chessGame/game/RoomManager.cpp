@@ -84,7 +84,7 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session, int initial, int in
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 
-	// 如果已经在匹配队列就拒绝
+	// if already in waiting queue, then return.
 	if (session->getRoom())
 		return;
 
@@ -389,6 +389,69 @@ void RoomManager::createLessonRoom(std::shared_ptr<Session> session, const std::
 			{"message", "start lesson failed: lesson position init failed"}
 			});
 	}
+}
+
+void RoomManager::listLessons(std::shared_ptr<Session> session)
+{
+	json lessons = json::array();
+	int order = 1;
+	for (const auto& lesson : LessonController::listLessons()) {
+		lessons.push_back({
+			{"lesson_id", lesson.lessonId},
+			{"piece", lesson.pieceName},
+			{"title", lesson.title},
+			{"description", lesson.description},
+			{"order", order++}
+			});
+	}
+
+	session->sendJson({
+		{"type", "lesson_list"},
+		{"lessons", lessons}
+		});
+}
+
+void RoomManager::getLessonState(std::shared_ptr<Session> session)
+{
+	auto room = session ? session->getRoom() : nullptr;
+	auto player = session ? session->getPlayer() : nullptr;
+
+	if (!room || room->mode() != GameRoom::Mode::Lesson || !room->sendLessonStateTo(player)) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "LESSON_NOT_ACTIVE"},
+			{"message", "get lesson state failed: no active lesson"}
+			});
+		return;
+	}
+}
+
+void RoomManager::exitLesson(std::shared_ptr<Session> session)
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	auto room = session ? session->getRoom() : nullptr;
+	if (!room || room->mode() != GameRoom::Mode::Lesson) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "LESSON_NOT_ACTIVE"},
+			{"message", "exit lesson failed: no active lesson"}
+		});
+		return;
+	}
+
+	const auto roomId = room->id();
+	const auto lessonId = room->lessonId();
+
+	session->sendJson({
+		{"type", "lesson_exited"},
+		{"room_id", roomId},
+		{"lesson_id", lessonId}
+	});
+
+	session->clearRoom();
+	session->setPlayer(nullptr);
+	rooms_.erase(roomId);
 }
 
 void RoomManager::closeRoom(std::shared_ptr<Session> session)

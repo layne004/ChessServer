@@ -12,7 +12,7 @@ Board::Board() {
 }
 
 void Board::init() {
-	// 清空
+	// reset all
 	for (int r = 0; r < 8; r++)
 		for (int c = 0; c < 8; c++) {
 			cells[r][c].reset();

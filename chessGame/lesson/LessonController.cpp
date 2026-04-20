@@ -109,6 +109,11 @@ std::optional<std::string> LessonController::findNextLessonId(const std::string&
 	return std::nullopt;
 }
 
+std::vector<LessonStep> LessonController::listLessons()
+{
+	return std::vector<LessonStep>(kLessons.begin(), kLessons.end());
+}
+
 std::vector<std::string> LessonController::listLessonIds()
 {
 	std::vector<std::string> ids;

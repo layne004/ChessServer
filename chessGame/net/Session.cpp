@@ -191,8 +191,11 @@ void Session::dispatchMessage(const json& j)
 		{"match", &Session::handleMatchMessage},
 		{"create_room", &Session::handleCreateRoomMessage},
 		{"join_room", &Session::handleJoinRoomMessage},
+		{"list_lessons", &Session::handleListLessonsMessage},
 		{"start_lesson", &Session::handleStartLessonMessage},
+		{"get_lesson_state", &Session::handleGetLessonStateMessage},
 		{"next_lesson", &Session::handleNextLessonMessage},
+		{"exit_lesson", &Session::handleExitLessonMessage},
 		{"cancel_match", &Session::handleCancelMatchMessage},
 		{"close_room", &Session::handleCloseRoomMessage},
 		{"move", &Session::handleMoveMessage},
@@ -265,6 +268,16 @@ void Session::handleStartLessonMessage(const json& j)
 	room_manager_->createLessonRoom(shared_from_this(), lessonId);
 }
 
+void Session::handleListLessonsMessage(const json&)
+{
+	room_manager_->listLessons(shared_from_this());
+}
+
+void Session::handleGetLessonStateMessage(const json&)
+{
+	room_manager_->getLessonState(shared_from_this());
+}
+
 void Session::handleNextLessonMessage(const json& j)
 {
 	std::string currentLessonId;
@@ -280,6 +293,11 @@ void Session::handleNextLessonMessage(const json& j)
 	}
 
 	room_manager_->createLessonRoom(shared_from_this(), *nextLessonId);
+}
+
+void Session::handleExitLessonMessage(const json&)
+{
+	room_manager_->exitLesson(shared_from_this());
 }
 
 void Session::handleCancelMatchMessage(const json&)

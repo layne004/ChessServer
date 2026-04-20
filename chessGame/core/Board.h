@@ -1,5 +1,4 @@
 #pragma once
-// 棋盘表示
 #include <optional>
 #include "Piece.h"
 #include "Move.h"

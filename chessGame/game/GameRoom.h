@@ -30,7 +30,7 @@ class GameRoom :public std::enable_shared_from_this<GameRoom>
 {
 public:
 	enum class Mode {
-		PvP, //玩家对战
+		PvP,  //玩家对战
 		PvE,  //玩家与AI对战
 		Lesson //教学模式
 	};
@@ -72,6 +72,10 @@ public:
 
 	// 获取当前轮
 	Color currentTurn()const { return turn_; }
+	Mode mode() const { return mode_; }
+	bool hasActiveLesson() const;
+	const std::string& lessonId() const { return lessonId_; }
+	bool sendLessonStateTo(const std::shared_ptr<Player>& player);
 
 	// 获取房间状态
 	bool isFull() const;
@@ -88,6 +92,7 @@ private:
 	void broadcastMove(const std::string& from, const std::string& to, std::optional<char> promotion = std::nullopt);
 	void broadcastState();
 	void broadcastLessonState();
+	json makeLessonStateJson() const;
 	//void broadcastGameOver(const std::string& result, const std::string& reason);
 
 	// 在走棋后更新时钟

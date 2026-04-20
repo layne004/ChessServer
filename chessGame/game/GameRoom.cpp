@@ -33,7 +33,7 @@ GameRoom::GameRoom(boost::asio::io_context& io, RoomID roomId, Mode mode,
 	:strand_(boost::asio::make_strand(io)), clockTimer_(io), roomId_(roomId), mode_(mode),
 	initialTimeMs_(initialTimeMs), incrementMs_(incrementMs)
 {
-	// 初始化
+	// initializition
 	board_.init();
 }
 
@@ -673,6 +673,21 @@ bool GameRoom::isEmpty() const
 	return !white_ && !black_;
 }
 
+bool GameRoom::hasActiveLesson() const
+{
+	return mode_ == Mode::Lesson && state_ == GameState::Playing && lessonStep_ < lessonSteps_.size();
+}
+
+bool GameRoom::sendLessonStateTo(const std::shared_ptr<Player>& player)
+{
+	if (!player || !hasActiveLesson()) {
+		return false;
+	}
+
+	player->sendJson(makeLessonStateJson());
+	return true;
+}
+
 void GameRoom::resetGame()
 {
 	auto self = shared_from_this();
@@ -749,12 +764,8 @@ void GameRoom::broadcastState()
 	broadcastJson(j);
 }
 
-void GameRoom::broadcastLessonState()
+json GameRoom::makeLessonStateJson() const
 {
-	if (lessonStep_ >= lessonSteps_.size()) {
-		return;
-	}
-
 	const auto& step = lessonSteps_[lessonStep_];
 	json j = {
 		{"type", "lesson_state"},
@@ -790,7 +801,16 @@ void GameRoom::broadcastLessonState()
 	}
 	j["legal_target_squares"] = legalTargets;
 
+	return j;
+}
+
+void GameRoom::broadcastLessonState()
+{
+	if (lessonStep_ >= lessonSteps_.size()) {
+		return;
+	}
+
 	if (white_) {
-		white_->sendJson(j);
+		white_->sendJson(makeLessonStateJson());
 	}
 }
