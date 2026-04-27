@@ -71,20 +71,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>D:\Code\chess\chessGame\third_party;D:\Download\boost_1_87_0;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Download\boost_1_87_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(MYSQL_INCLUDE_DIR);D:\Code\chess\chessGame\third_party;D:\Download\boost_1_87_0;$(IncludePath)</IncludePath>
+    <LibraryPath>$(MYSQL_LIB_DIR);D:\Download\boost_1_87_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>D:\Code\chess\chessGame\third_party;D:\Download\boost_1_87_0;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Download\boost_1_87_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(MYSQL_INCLUDE_DIR);D:\Code\chess\chessGame\third_party;D:\Download\boost_1_87_0;$(IncludePath)</IncludePath>
+    <LibraryPath>$(MYSQL_LIB_DIR);D:\Download\boost_1_87_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>D:\Download\boost_1_87_0;D:\Download\chess\ChessServer\third_party;D:\Download\chess\ChessServer\chessGame\rules;D:\Download\chess\ChessServer\chessGame\net;D:\Download\chess\ChessServer\chessGame\game;D:\Download\chess\ChessServer\chessGame\core;D:\Download\chess\ChessServer\chessGame\lesson;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Download\boost_1_87_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\Program Files\MySQL\MySQL Server 8.0\include;D:\Download\boost_1_87_0;D:\Download\chess\ChessServer\third_party;D:\Download\chess\ChessServer\chessGame\rules;D:\Download\chess\ChessServer\chessGame\net;D:\Download\chess\ChessServer\chessGame\game;D:\Download\chess\ChessServer\chessGame\core;D:\Download\chess\ChessServer\chessGame\lesson;D:\Download\chess\ChessServer\chessGame\db;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\Program Files\MySQL\MySQL Server 8.0\lib;D:\Download\boost_1_87_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>D:\Code\chess\chessGame\third_party;D:\Download\boost_1_87_0;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Download\boost_1_87_0\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(MYSQL_INCLUDE_DIR);D:\Code\chess\chessGame\third_party;D:\Download\boost_1_87_0;D:\Download\chess\ChessServer\chessGame\db;$(IncludePath)</IncludePath>
+    <LibraryPath>$(MYSQL_LIB_DIR);D:\Download\boost_1_87_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -98,6 +98,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -114,6 +115,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -129,6 +131,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -145,9 +149,11 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libmysql.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="db\Database.cpp" />
     <ClCompile Include="core\Board.cpp" />
     <ClCompile Include="core\CheckEvaluator.cpp" />
     <ClCompile Include="core\MoveGenerator.cpp" />
@@ -167,6 +173,7 @@
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="db\Database.h" />
     <ClInclude Include="core\Board.h" />
     <ClInclude Include="core\CheckEvaluator.h" />
     <ClInclude Include="core\Move.h" />

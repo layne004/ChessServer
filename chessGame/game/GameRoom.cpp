@@ -9,6 +9,7 @@
 #include "AIPlayer.h"
 #include "LessonStep.h"
 #include "LessonController.h"
+#include "../db/Database.h"
 using namespace std::chrono;
 
 namespace
@@ -507,6 +508,12 @@ void GameRoom::handleLessonMove(std::shared_ptr<Player> player, const std::strin
 	}
 
 	if (remainingLessonTargets_.empty()) {
+		if (auto netPlayer = std::dynamic_pointer_cast<NetworkPlayer>(player)) {
+			if (auto session = netPlayer->getSession()) {
+				Database::instance().upsertLessonProgress(session->userId(), step.lessonId, lessonMoveCount_);
+			}
+		}
+
 		player->sendJson({
 			{"type", "lesson_passed"},
 			{"lesson_id", step.lessonId},

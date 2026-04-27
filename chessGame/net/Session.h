@@ -29,6 +29,8 @@ public:
 
 	void setPlayer(std::shared_ptr<Player> p);
 	std::shared_ptr<Player> getPlayer();
+	void setUserId(const std::string& userId);
+	const std::string& userId() const;
 
 	bool isAlive() { return alive_; }
 	void sendConnectionMessage();
@@ -55,6 +57,7 @@ private:
 	void disconnect();
 	void sendProtocolError(const std::string& code, const std::string& message, const json* request = nullptr);
 	bool tryGetStringField(const json& j, const char* field, std::string& out, const char* errorCode, const char* errorMessage);
+	bool tryBindUserIdField(const json& j, bool required = false);
 	int getClampedIntField(const json& j, const char* field, int defaultValue, int minValue, int maxValue, bool integerOnly = false) const;
 	bool tryGetMovePayload(const json& j, std::string& from, std::string& to, char& promotion);
 	static bool isValidSquare(const std::string& square);
@@ -68,5 +71,6 @@ private:
 	std::shared_ptr<Player> player_;
 	std::shared_ptr<GameRoom> room_;
 	std::shared_ptr<RoomManager> room_manager_;
+	std::string user_id_;
 	bool disconnected_ = false;
 };

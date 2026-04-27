@@ -75,6 +75,16 @@ std::shared_ptr<Player> Session::getPlayer()
 	return player_;
 }
 
+void Session::setUserId(const std::string& userId)
+{
+	user_id_ = userId;
+}
+
+const std::string& Session::userId() const
+{
+	return user_id_;
+}
+
 void Session::sendConnectionMessage()
 {
 	if (!socket_.is_open()) {
@@ -259,6 +269,10 @@ void Session::handleJoinRoomMessage(const json& j)
 
 void Session::handleStartLessonMessage(const json& j)
 {
+	if (!tryBindUserIdField(j)) {
+		return;
+	}
+
 	std::string lessonId;
 	if (!tryGetStringField(j, "lesson_id", lessonId, "INVALID_LESSON_ID",
 		"field 'lesson_id' is required and must be string")) {
@@ -268,18 +282,30 @@ void Session::handleStartLessonMessage(const json& j)
 	room_manager_->createLessonRoom(shared_from_this(), lessonId);
 }
 
-void Session::handleListLessonsMessage(const json&)
+void Session::handleListLessonsMessage(const json& j)
 {
+	if (!tryBindUserIdField(j)) {
+		return;
+	}
+
 	room_manager_->listLessons(shared_from_this());
 }
 
-void Session::handleGetLessonStateMessage(const json&)
+void Session::handleGetLessonStateMessage(const json& j)
 {
+	if (!tryBindUserIdField(j)) {
+		return;
+	}
+
 	room_manager_->getLessonState(shared_from_this());
 }
 
 void Session::handleNextLessonMessage(const json& j)
 {
+	if (!tryBindUserIdField(j)) {
+		return;
+	}
+
 	std::string currentLessonId;
 	if (!tryGetStringField(j, "current_lesson_id", currentLessonId, "INVALID_LESSON_ID",
 		"field 'current_lesson_id' is required and must be string")) {
@@ -383,6 +409,25 @@ bool Session::tryGetStringField(const json& j, const char* field, std::string& o
 	}
 
 	out = j.at(field).get<std::string>();
+	return true;
+}
+
+bool Session::tryBindUserIdField(const json& j, bool required)
+{
+	if (!j.contains("user_id")) {
+		if (required) {
+			sendProtocolError("INVALID_USER_ID", "field 'user_id' is required and must be string", &j);
+			return false;
+		}
+		return true;
+	}
+
+	if (!j["user_id"].is_string()) {
+		sendProtocolError("INVALID_USER_ID", "field 'user_id' is required and must be string", &j);
+		return false;
+	}
+
+	user_id_ = j.at("user_id").get<std::string>();
 	return true;
 }
 

@@ -40,6 +40,10 @@
 
 int main()
 {
+#ifdef _WIN32
+	SetConsoleOutputCP(CP_UTF8);
+	SetConsoleCP(CP_UTF8);
+#endif
 	boost::asio::io_context io;
 
 	// 防止 io.run() 提前退出

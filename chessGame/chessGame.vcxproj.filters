@@ -24,6 +24,9 @@
     <Filter Include="lesson">
       <UniqueIdentifier>{c3e7a38e-aa66-4794-8a35-b65093a270c8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="db">
+      <UniqueIdentifier>{e96cf2ef-5c32-467e-8fde-8eff2a9c5588}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -76,6 +79,9 @@
     </ClCompile>
     <ClCompile Include="core\Board.cpp">
       <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="db\Database.cpp">
+      <Filter>db</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -138,6 +144,9 @@
     </ClInclude>
     <ClInclude Include="lesson\LessonController.h">
       <Filter>lesson</Filter>
+    </ClInclude>
+    <ClInclude Include="db\Database.h">
+      <Filter>db</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

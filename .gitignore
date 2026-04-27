@@ -29,6 +29,7 @@ tests/
 docs/
 scripts/
 tools/
+temp_doc/
 
 ## 忽略 C++ 浏览数据库/智能感知文件
 *.sdf

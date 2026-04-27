@@ -3,6 +3,7 @@
 #include "NetworkPlayer.h"
 #include "AIPlayer.h"
 #include "LessonController.h"
+#include "../db/Database.h"
 #include <random>
 #include <cctype>
 
@@ -90,6 +91,13 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session, int initial, int in
 
 	removeFromWaitingBucketsLocked(session);
 
+	session->sendJson({
+		{"type", "matching"},
+		{"mode", "pvp"},
+		{"initial", initial},
+		{"increment", increment}
+		});
+
 	std::string key = makeBucketKey(initial, increment);
 	auto& queue = waitingBuckets_[key];
 
@@ -106,13 +114,6 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session, int initial, int in
 
 	if (queue.empty()) {
 		queue.push(session);
-
-		session->sendJson({
-			{"type", "matching"},
-			{"mode", "pvp"},
-			{"initial", initial},
-			{"increment", increment}
-			});
 	}
 	else {
 		auto opponent = queue.front();
@@ -393,16 +394,33 @@ void RoomManager::createLessonRoom(std::shared_ptr<Session> session, const std::
 
 void RoomManager::listLessons(std::shared_ptr<Session> session)
 {
+	const auto progressByLesson = Database::instance().getLessonProgress(session ? session->userId() : "");
+
 	json lessons = json::array();
 	int order = 1;
 	for (const auto& lesson : LessonController::listLessons()) {
-		lessons.push_back({
+		json item = {
 			{"lesson_id", lesson.lessonId},
 			{"piece", lesson.pieceName},
 			{"title", lesson.title},
 			{"description", lesson.description},
 			{"order", order++}
-			});
+			};
+
+		item["completed"] = false;
+
+		const auto progressIt = progressByLesson.find(lesson.lessonId);
+		if (progressIt != progressByLesson.end()) {
+			item["completed"] = progressIt->second.completed;
+			if (progressIt->second.bestMoveCount.has_value()) {
+				item["best_move_count"] = *progressIt->second.bestMoveCount;
+			}
+			if (progressIt->second.lastMoveCount.has_value()) {
+				item["last_move_count"] = *progressIt->second.lastMoveCount;
+			}
+		}
+
+		lessons.push_back(std::move(item));
 	}
 
 	session->sendJson({
