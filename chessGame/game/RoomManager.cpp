@@ -86,8 +86,14 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session, int initial, int in
 	std::lock_guard<std::mutex> lock(mutex_);
 
 	// if already in waiting queue, then return.
-	if (session->getRoom())
+	if (session->getRoom()) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "ALREADY_IN_ROOM"},
+			{"message", "match failed: already in room"}
+			});
 		return;
+	}
 
 	removeFromWaitingBucketsLocked(session);
 
@@ -139,6 +145,15 @@ void RoomManager::matchPvp(std::shared_ptr<Session> session, int initial, int in
 void RoomManager::createPveRoom(std::shared_ptr<Session> session, const std::string& level, const std::string& color)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
+
+	if (session->getRoom()) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "ALREADY_IN_ROOM"},
+			{"message", "start pve failed: already in room"}
+			});
+		return;
+	}
 
 	Color humanColor = Color::White;
 	if (color == "black")
@@ -470,6 +485,65 @@ void RoomManager::exitLesson(std::shared_ptr<Session> session)
 	session->clearRoom();
 	session->setPlayer(nullptr);
 	rooms_.erase(roomId);
+}
+
+void RoomManager::leaveRoom(std::shared_ptr<Session> session)
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	auto room = session ? session->getRoom() : nullptr;
+	if (!room) {
+		session->sendJson({
+			{"type", "error"},
+			{"code", "NOT_IN_ROOM"},
+			{"message", "leave room failed: not in room"}
+			});
+		return;
+	}
+
+	if (room->mode() == GameRoom::Mode::Lesson) {
+		const auto roomId = room->id();
+		const auto lessonId = room->lessonId();
+
+		session->sendJson({
+			{"type", "lesson_exited"},
+			{"room_id", roomId},
+			{"lesson_id", lessonId}
+			});
+
+		session->clearRoom();
+		session->setPlayer(nullptr);
+		rooms_.erase(roomId);
+		return;
+	}
+
+	if (room->mode() == GameRoom::Mode::PvE) {
+		const auto roomId = room->id();
+		room->endGame("aborted", "leave_room");
+		rooms_.erase(roomId);
+
+		session->sendJson({
+			{"type", "room_left"},
+			{"room_id", roomId},
+			{"mode", "pve"}
+			});
+		return;
+	}
+
+	if (closeWaitingRoomLocked(session, false)) {
+		session->clearRoom();
+		session->setPlayer(nullptr);
+		session->sendJson({
+			{"type", "room_closed"}
+			});
+		return;
+	}
+
+	session->sendJson({
+		{"type", "error"},
+		{"code", "ROOM_NOT_LEAVABLE"},
+		{"message", "leave room failed: active pvp game must use resign"}
+		});
 }
 
 void RoomManager::closeRoom(std::shared_ptr<Session> session)

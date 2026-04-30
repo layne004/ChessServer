@@ -21,7 +21,7 @@ namespace
 		
 		std::string result(value);
 		free(value);
-		return value;
+		return result;
 	#else
 		const char* value = std::getenv(name);
 		if (!value || *value == '\0')

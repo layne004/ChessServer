@@ -48,6 +48,7 @@ private:
 	void handleListLessonsMessage(const json& j);
 	void handleGetLessonStateMessage(const json& j);
 	void handleExitLessonMessage(const json& j);
+	void handleLeaveRoomMessage(const json& j);
 	void handleCancelMatchMessage(const json& j);
 	void handleCloseRoomMessage(const json& j);
 	void handleMoveMessage(const json& j);

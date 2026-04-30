@@ -431,14 +431,17 @@ void GameRoom::maybeAIMove()
 		return;
 
 	auto ai = std::dynamic_pointer_cast<AIPlayer>(current);
+	auto currentWeak = std::weak_ptr<Player>(current);
 
 	std::string fen = board_.toFEN(turn_, halfmoveClock_, fullmoveNumber_);
 
-	ai->asyncThink(fen, [weak = weak_from_this(), current](AIMove move)
+	ai->asyncThink(fen, [weak = weak_from_this(), currentWeak](AIMove move)
 		{
 			if (auto self = weak.lock())
 			{
-				self->handleMove(current, move.from, move.to, move.promotion);
+				if (auto currentLocked = currentWeak.lock()) {
+					self->handleMove(currentLocked, move.from, move.to, move.promotion);
+				}
 			}
 		});
 }

@@ -11,8 +11,14 @@ StockfishEngine::~StockfishEngine()
 
 	cv_.notify_all();
 
-	if (worker_.joinable())
-		worker_.join();
+	if (worker_.joinable()) {
+		if (worker_.get_id() == std::this_thread::get_id()) {
+			worker_.detach();
+		}
+		else {
+			worker_.join();
+		}
+	}
 
 #ifdef _WIN32
 	if (processHandle)

@@ -28,6 +28,7 @@ public:
 	void listLessons(std::shared_ptr<Session> session);
 	void getLessonState(std::shared_ptr<Session> session);
 	void exitLesson(std::shared_ptr<Session> session);
+	void leaveRoom(std::shared_ptr<Session> session);
 	void cancelMatch(std::shared_ptr<Session> session);
 	void closeRoom(std::shared_ptr<Session> session);
 	void handleSessionClosed(const std::shared_ptr<Session>& session);

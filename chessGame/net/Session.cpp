@@ -197,6 +197,7 @@ void Session::handleMessage(const std::string& msg)
 
 void Session::dispatchMessage(const json& j)
 {
+	std::cout << "[recvJson] Received JSON: " << j.dump() << std::endl;
 	static const std::unordered_map<std::string, void (Session::*)(const json&)> handlers = {
 		{"match", &Session::handleMatchMessage},
 		{"create_room", &Session::handleCreateRoomMessage},
@@ -206,6 +207,7 @@ void Session::dispatchMessage(const json& j)
 		{"get_lesson_state", &Session::handleGetLessonStateMessage},
 		{"next_lesson", &Session::handleNextLessonMessage},
 		{"exit_lesson", &Session::handleExitLessonMessage},
+		{"leave_room", &Session::handleLeaveRoomMessage},
 		{"cancel_match", &Session::handleCancelMatchMessage},
 		{"close_room", &Session::handleCloseRoomMessage},
 		{"move", &Session::handleMoveMessage},
@@ -324,6 +326,11 @@ void Session::handleNextLessonMessage(const json& j)
 void Session::handleExitLessonMessage(const json&)
 {
 	room_manager_->exitLesson(shared_from_this());
+}
+
+void Session::handleLeaveRoomMessage(const json&)
+{
+	room_manager_->leaveRoom(shared_from_this());
 }
 
 void Session::handleCancelMatchMessage(const json&)
